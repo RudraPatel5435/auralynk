@@ -5,11 +5,24 @@ import (
 	"github.com/RudraPatel5435/auralynk/server/models"
 	"github.com/RudraPatel5435/auralynk/server/routes"
 	"github.com/gin-gonic/gin"
+	"log"
 )
 
 func main() {
 	database.ConnectDB()
-	database.DB.AutoMigrate(&models.User{}, &models.Message{})
+	// database.DB.AutoMigrate(&models.User{}, &models.Message{})
+
+	// test user
+	testUser := models.User{
+		Username: "rudra",
+		Email:    "rudra@example.com",
+		Password: "1234",
+	}
+	result := database.DB.Create(&testUser)
+	if result.Error != nil {
+		log.Fatal(result.Error)
+	}
+	log.Println("Insted User:", testUser.Username)
 
 	r := gin.Default()
 

@@ -10,8 +10,8 @@ import (
 	"net/http"
 )
 
-var clients = make(map[*websocket.Conn]bool)
-var broadcast = make(chan string)
+var clients = make(map[*websocket.Conn]*models.User)
+var broadcast = make(chan models.Message)
 
 func ChatWebSocket(c *gin.Context) {
 	conn, err := utils.Upgrader.Upgrade(c.Writer, c.Request, nil)
@@ -20,8 +20,12 @@ func ChatWebSocket(c *gin.Context) {
 		return
 	}
 
-	clients[conn] = true
-	fmt.Println("New user connected")
+	// Demo
+	user := models.User{Username: "Anonymous"}
+	database.DB.FirstOrCreate(&user, models.User{Username: "Anonymous"})
+
+	clients[conn] = &user
+	fmt.Println("New user connected:", user.Username)
 
 	go handleMessages()
 
@@ -33,7 +37,16 @@ func ChatWebSocket(c *gin.Context) {
 			conn.Close()
 			break
 		}
-		broadcast <- string(msg)
+
+		message := models.Message{
+			Content: string(msg),
+			UserID:  user.ID,
+		}
+
+		// Save message to DB
+		database.DB.Create(&message)
+
+		broadcast <- message
 	}
 }
 
@@ -41,7 +54,7 @@ func handleMessages() {
 	for {
 		msg := <-broadcast
 		for client := range clients {
-			err := client.WriteMessage(websocket.TextMessage, []byte(msg))
+			err := client.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("%s: %s", msg.User.Username, msg.Content)))
 			if err != nil {
 				client.Close()
 				delete(clients, client)
