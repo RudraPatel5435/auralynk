@@ -2,11 +2,12 @@ package database
 
 import (
 	"fmt"
+	"log"
+	"os"
+
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"log"
-	"os"
 )
 
 var DB *gorm.DB
@@ -28,6 +29,6 @@ func ConnectDB() {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	fmt.Println("Connected to Neon PostgreSQL succesfully")
+	fmt.Println("Connected to database succesfully")
 	DB = db
 }
