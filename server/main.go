@@ -10,7 +10,7 @@ import (
 
 func main() {
 	database.ConnectDB()
-	database.DB.AutoMigrate(&models.User{}, &models.Message{}, &models.Channel{})
+	// database.DB.AutoMigrate(&models.User{}, &models.Message{}, &models.Channel{})
 
 	// user1 := models.User{Username: "Rudra", Email: "rudra@example.com", Password: "123", ID: 3}
 	// user2 := models.User{Username: "Om", Email: "om@example.com", Password: "123"}
