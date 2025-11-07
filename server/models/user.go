@@ -7,22 +7,21 @@ import (
 )
 
 type User struct {
-	ID        uuid.UUID  `gorm:"type:uuid;primaryKey"`
-	Username  string     `gorm:"uniqueIndex;not null"`
-	Email     string     `gorm:"uniqueIndex;not null"`
-	Password  string     `gorm:"not null"`
-	Messages  []Message  `gorm:"foreignKey:UserID"`
-	Channels  []*Channel `gorm:"many2many:user_channels;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
+	ID            uuid.UUID      `gorm:"type:uuid;primaryKey"`
+	Username      string         `gorm:"uniqueIndex;not null"`
+	Email         string         `gorm:"uniqueIndex;not null"`
+	Password      string         `gorm:"not null"`
+	OwnedChannels []*Channel     `gorm:"many2many:user_owned_channels;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	CreatedAt     time.Time      `gorm:"autoCreateTime"`
+	UpdatedAt     time.Time      `gorm:"autoUpdateTime"`
+	DeletedAt     gorm.DeletedAt `gorm:"index"`
 }
 
-func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
-	u.ID = uuid.New()
-	return
-}
-
-func (u *User) AfterCreate(tx *gorm.DB) (err error) {
-	return
-}
+// func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
+// 	u.ID = uuid.New()
+// 	return
+// }
+//
+// func (u *User) AfterCreate(tx *gorm.DB) (err error) {
+// 	return
+// }
