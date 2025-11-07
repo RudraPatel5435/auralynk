@@ -1,7 +1,9 @@
 package routes
 
 import (
-	// "github.com/RudraPatel5435/auralynk/server/middleware"
+	"github.com/RudraPatel5435/auralynk/server/database"
+	"github.com/RudraPatel5435/auralynk/server/middleware"
+	"github.com/RudraPatel5435/auralynk/server/models"
 	"github.com/gin-gonic/gin"
 )
 
@@ -36,9 +38,21 @@ func SetupRouter() *gin.Engine {
 
 	// Remove in production
 	if gin.Mode() == gin.DebugMode {
-		r.GET("/debug/users", DebugGetUsers)
-		r.GET("/debug/channels", DebugGetChannels)
-		r.GET("/debug/messages", DebugGetMessages)
+		r.GET("/debug/users", func(c *gin.Context) {
+			var users []models.User
+			database.DB.Find(&users)
+			c.JSON(200, users)
+		})
+		r.GET("/debug/channels", func(c *gin.Context) {
+			var channels []models.Channel
+			database.DB.Find(&channels)
+			c.JSON(200, channels)
+		})
+		r.GET("/debug/messages", func(c *gin.Context) {
+			var messages []models.Message
+			database.DB.Find(&messages)
+			c.JSON(200, messages)
+		})
 	}
 
 	return r

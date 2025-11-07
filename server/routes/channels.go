@@ -9,8 +9,11 @@ func RegisterChannelRoutes(rg *gin.RouterGroup) {
 	channels := rg.Group("/channels")
 	{
 		channels.POST("", handlers.CreateChannel)
-
 		channels.GET("", handlers.GetChannels)
-
+		channels.GET("/:id", handlers.GetChannel)
+		channels.PATCH("/:id", handlers.UpdateChannel)
+		channels.DELETE("/:id", handlers.DeleteChannel)
+		channels.POST("/:id/join", handlers.JoinChannel)
+		channels.POST("/:id/leave", handlers.LeaveChannel)
 	}
 }
