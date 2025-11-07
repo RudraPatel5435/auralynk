@@ -8,10 +8,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"net/http"
+	"sync"
 )
 
 var clients = make(map[*websocket.Conn]*models.User)
 var broadcast = make(chan models.Message)
+var once sync.Once
 
 func ChatWebSocket(c *gin.Context) {
 	conn, err := utils.Upgrader.Upgrade(c.Writer, c.Request, nil)
@@ -27,7 +29,9 @@ func ChatWebSocket(c *gin.Context) {
 	clients[conn] = &user
 	fmt.Println("New user connected:", user.Username)
 
-	go handleMessages()
+	once.Do(func() {
+		go handleMessages()
+	})
 
 	for {
 		_, msg, err := conn.ReadMessage()

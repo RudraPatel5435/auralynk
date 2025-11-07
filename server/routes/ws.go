@@ -5,6 +5,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func HandleWebSocket(c *gin.Context) {
-	handlers.ChatWebSocket(c)
+func RegisterWebSocketRoutes(rg *gin.RouterGroup) {
+	rg.GET("/:channelId", handlers.ChatWebSocket)
 }
