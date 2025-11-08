@@ -88,3 +88,8 @@ func ValidateChannelName(name string) error {
 func SanitizeEmail(email string) string {
 	return strings.ToLower(strings.TrimSpace(email))
 }
+
+func IsValidUUID(id string) bool {
+	matched, _ := regexp.MatchString("^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$", id)
+	return matched
+}

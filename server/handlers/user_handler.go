@@ -34,7 +34,7 @@ func RegisterUser(c *gin.Context) {
 	input.Email = utils.SanitizeEmail(input.Email)
 
 	var existingUser models.User
-	if err := database.DB.Where("username = ? OR email = ?", input.Username, input.Email).First(&existingUser).Error; err != nil {
+	if err := database.DB.Where("username = ? OR email = ?", input.Username, input.Email).First(&existingUser).Error; err == nil {
 		utils.ErrorResponse(c, 409, "Username or email already exists")
 		return
 	}
@@ -60,6 +60,7 @@ func RegisterUser(c *gin.Context) {
 	token, err := middleware.GenerateJWT(user.ID)
 	if err != nil {
 		utils.ErrorResponse(c, 500, "Failed to genrate token")
+		return
 	}
 
 	utils.SuccessResponse(c, 201, "User registered successfully", gin.H{
@@ -88,6 +89,7 @@ func LoginUser(c *gin.Context) {
 	var user models.User
 	if err := database.DB.Where("Email = ?", input.Email).First(&user).Error; err != nil {
 		utils.ErrorResponse(c, 401, "Invalid credentials")
+		return
 	}
 
 	if !utils.CheckPasswordHash(input.Password, user.Password) {
@@ -98,6 +100,7 @@ func LoginUser(c *gin.Context) {
 	token, err := middleware.GenerateJWT(user.ID)
 	if err != nil {
 		utils.ErrorResponse(c, 500, "Failed to generate token")
+		return
 	}
 
 	utils.SuccessResponse(c, 200, "Login successful", gin.H{

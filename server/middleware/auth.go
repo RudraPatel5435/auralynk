@@ -58,7 +58,7 @@ func Auth() gin.HandlerFunc {
 			return
 		}
 
-		parts := strings.Split(authHeader, "")
+		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"error": "Invalid authorization header format",
