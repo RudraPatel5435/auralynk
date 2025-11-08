@@ -61,7 +61,7 @@ func Auth() gin.HandlerFunc {
 		parts := strings.Split(authHeader, "")
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "Invalid authorization header format"
+				"error": "Invalid authorization header format",
 			})
 			c.Abort()
 			return
@@ -71,17 +71,17 @@ func Auth() gin.HandlerFunc {
 
 		claims, err := ValidateJWT(tokenString)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H {
-				"error": "Invalid or expired token"
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "Invalid or expired token",
 			})
 			c.Abort()
 			return
 		}
 
 		var user models.User
-		if err:=database.DB.First(&user, "id = ?", claims.UserID).Error; err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H {
-				"error": "User not found"
+		if err := database.DB.First(&user, "id = ?", claims.UserID).Error; err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "User not found",
 			})
 			c.Abort()
 			return

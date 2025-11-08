@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"net/http"
-
 	"github.com/RudraPatel5435/auralynk/server/database"
 	"github.com/RudraPatel5435/auralynk/server/middleware"
 	"github.com/RudraPatel5435/auralynk/server/models"
@@ -19,17 +17,17 @@ func RegisterUser(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.ValidationErrorResponse(c, err.Error())
 		return
 	}
 
 	if err := utils.ValidateUsername(input.Username); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.ErrorResponse(c, 400, err.Error())
 		return
 	}
 
 	if err := utils.ValidatePassword(input.Password); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.ErrorResponse(c, 400, err.Error())
 		return
 	}
 
@@ -37,13 +35,13 @@ func RegisterUser(c *gin.Context) {
 
 	var existingUser models.User
 	if err := database.DB.Where("username = ? OR email = ?", input.Username, input.Email).First(&existingUser).Error; err != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "Username or email already exists"})
+		utils.ErrorResponse(c, 409, "Username or email already exists")
 		return
 	}
 
 	hashedPassword, err := utils.HashPassword(input.Password)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process password"})
+		utils.ErrorResponse(c, 500, "Failed to process password")
 		return
 	}
 
@@ -55,17 +53,16 @@ func RegisterUser(c *gin.Context) {
 	}
 
 	if err := database.DB.Create(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register user"})
+		utils.ErrorResponse(c, 500, "Failed to register user")
 		return
 	}
 
 	token, err := middleware.GenerateJWT(user.ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		utils.ErrorResponse(c, 500, "Failed to genrate token")
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"message": "User registered successfully",
+	utils.SuccessResponse(c, 201, "User registered successfully", gin.H{
 		"user": gin.H{
 			"id":       user.ID,
 			"username": user.Username,
@@ -82,7 +79,7 @@ func LoginUser(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.ValidationErrorResponse(c, err.Error())
 		return
 	}
 
@@ -90,25 +87,20 @@ func LoginUser(c *gin.Context) {
 
 	var user models.User
 	if err := database.DB.Where("Email = ?", input.Email).First(&user).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Invalid credentials",
-		})
+		utils.ErrorResponse(c, 401, "Invalid credentials")
 	}
 
 	if !utils.CheckPasswordHash(input.Password, user.Password) {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Invalid credentials",
-		})
+		utils.ErrorResponse(c, 401, "Invalid credentials")
 		return
 	}
 
 	token, err := middleware.GenerateJWT(user.ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		utils.ErrorResponse(c, 500, "Failed to generate token")
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Login successful",
+	utils.SuccessResponse(c, 200, "Login successful", gin.H{
 		"user": gin.H{
 			"id":       user.ID,
 			"username": user.Username,
