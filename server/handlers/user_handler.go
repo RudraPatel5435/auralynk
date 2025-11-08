@@ -59,7 +59,7 @@ func RegisterUser(c *gin.Context) {
 
 	token, err := middleware.GenerateJWT(user.ID)
 	if err != nil {
-		utils.ErrorResponse(c, 500, "Failed to genrate token")
+		utils.ErrorResponse(c, 500, "Failed to generate token")
 		return
 	}
 

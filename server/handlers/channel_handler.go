@@ -67,14 +67,11 @@ func GetChannels(c *gin.Context) {
 	var channels []models.Channel
 
 	err := database.DB.
+		Distinct("channels.id").
 		Preload("Admin").
 		Preload("Members").
-		Where("access_type = ?", "public").
-		Or("id IN (?)",
-			database.DB.Table("channel_members").
-				Select("channel_id").
-				Where("user_id = ?", user.ID),
-		).
+		Joins("LEFT JOIN channel_members ON channel_members.channel_id = channels.id").
+		Where("channels.access_type = ? OR channel_members.user_id = ?", "public", user.ID).
 		Find(&channels).Error
 
 	if err != nil {
