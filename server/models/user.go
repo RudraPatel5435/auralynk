@@ -12,6 +12,7 @@ type User struct {
 	Email         string         `gorm:"uniqueIndex;not null"`
 	Password      string         `gorm:"not null"`
 	OwnedChannels []*Channel     `gorm:"many2many:user_owned_channels;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	LastOnline    time.Time      `gorm:"default:CURRENT_TIMESTAMP"`
 	CreatedAt     time.Time      `gorm:"autoCreateTime"`
 	UpdatedAt     time.Time      `gorm:"autoUpdateTime"`
 	DeletedAt     gorm.DeletedAt `gorm:"index"`

@@ -4,8 +4,6 @@ import (
 	"github.com/RudraPatel5435/auralynk/server/database"
 	// "github.com/RudraPatel5435/auralynk/server/models"
 	"github.com/RudraPatel5435/auralynk/server/routes"
-	// "github.com/google/uuid"
-	// "log"
 )
 
 func main() {

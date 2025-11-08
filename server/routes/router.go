@@ -10,7 +10,7 @@ import (
 func SetupRouter() *gin.Engine {
 	r := gin.Default()
 
-	// r.Use(middleware.CORS())
+	r.Use(middleware.CORS())
 	// r.Use(middleware.Logger())
 
 	r.GET("/", func(c *gin.Context) {
