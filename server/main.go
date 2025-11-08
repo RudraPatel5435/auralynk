@@ -10,7 +10,9 @@ import (
 	"time"
 
 	"github.com/RudraPatel5435/auralynk/server/database"
+	"github.com/RudraPatel5435/auralynk/server/handlers"
 	"github.com/joho/godotenv"
+
 	// "github.com/RudraPatel5435/auralynk/server/models"
 	"github.com/RudraPatel5435/auralynk/server/routes"
 )
@@ -24,6 +26,8 @@ func main() {
 	database.ConnectDB()
 	// database.DB.Migrator().DropTable(&models.User{}, &models.Message{}, &models.Channel{}, "user_owned_channels", "channel_members")
 	// database.DB.AutoMigrate(&models.User{}, &models.Message{}, &models.Channel{})
+
+	handlers.StartHub()
 
 	r := routes.SetupRouter()
 
