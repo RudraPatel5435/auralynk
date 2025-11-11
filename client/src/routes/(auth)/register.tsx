@@ -50,10 +50,10 @@ function RouteComponent() {
       setUser(reqData.user)
       localStorage.setItem('auth_token', reqData.token)
       localStorage.setItem('auth_user', JSON.stringify(reqData.token))
-      navigate('/channels')
-    } catch (err) {
+      navigate({ to: "/" })
+    } catch (err: any) {
       console.error("Failed to register:", err)
-      toast.error("Failed to register")
+      toast.error(`${err}`)
     } finally {
       setAuthLoading(false)
     }

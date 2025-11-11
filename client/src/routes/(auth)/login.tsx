@@ -51,9 +51,9 @@ function RouteComponent() {
       localStorage.setItem('auth_token', reqData.token)
       localStorage.setItem('auth_user', JSON.stringify(reqData.token))
       navigate({ to: '/' })
-    } catch (err) {
-      console.error("Failed to register:", err)
-      toast.error("Failed to register")
+    } catch (err: any) {
+      console.error("Failed to login:", err)
+      toast.error(`${err}`)
     } finally {
       setAuthLoading(false)
     }
