@@ -90,7 +90,6 @@ func (h *Hub) Run() {
 					delete(clients, client)
 					close(client.Send)
 
-					// Remove channel if empty
 					if len(clients) == 0 {
 						delete(h.Channels, client.ChannelID)
 					}
@@ -98,7 +97,6 @@ func (h *Hub) Run() {
 			}
 			h.Mutex.Unlock()
 
-			// Notify others that user left
 			leaveMsg := WSMessage{
 				Type: "user_left",
 				User: map[string]any{
@@ -275,7 +273,7 @@ func (c *Client) WritePump() {
 }
 
 func ChatWebSocket(c *gin.Context) {
-	channelID := c.Param("channelID")
+	channelID := c.Param("channelId")
 
 	if !utils.IsValidUUID(channelID) {
 		c.JSON(400, gin.H{"error": "Invalid channel ID"})

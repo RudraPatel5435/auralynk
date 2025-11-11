@@ -1,17 +1,25 @@
 package routes
 
 import (
+	"log"
+
 	"github.com/RudraPatel5435/auralynk/server/database"
 	"github.com/RudraPatel5435/auralynk/server/middleware"
 	"github.com/RudraPatel5435/auralynk/server/models"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
 func SetupRouter() *gin.Engine {
 	r := gin.Default()
 
+	store, err := middleware.InitSessionStore(database.DB)
+	if err != nil {
+		log.Fatal("Failed to initialize session store:", err)
+	}
+
 	r.Use(middleware.CORS())
-	// r.Use(middleware.Logger())
+	r.Use(sessions.Sessions("auralynk_session", store))
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "Server running", "status": "ok"})
@@ -23,7 +31,7 @@ func SetupRouter() *gin.Engine {
 	}
 
 	protected := r.Group("/api")
-	protected.Use(middleware.Auth())
+	protected.Use(middleware.SessionAuth())
 	{
 		RegisterChannelRoutes(protected)
 		RegisterMemberRoutes(protected)
@@ -31,7 +39,7 @@ func SetupRouter() *gin.Engine {
 	}
 
 	ws := r.Group("/ws")
-	ws.Use(middleware.Auth())
+	ws.Use(middleware.SessionAuth())
 	{
 		RegisterWebSocketRoutes(ws)
 	}

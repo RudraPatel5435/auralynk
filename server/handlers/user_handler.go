@@ -57,9 +57,8 @@ func RegisterUser(c *gin.Context) {
 		return
 	}
 
-	token, err := middleware.GenerateJWT(user.ID)
-	if err != nil {
-		utils.ErrorResponse(c, 500, "Failed to generate token")
+	if err := middleware.SetUserSession(c, user.ID); err != nil {
+		utils.ErrorResponse(c, 500, "Failed to create session")
 		return
 	}
 
@@ -69,7 +68,6 @@ func RegisterUser(c *gin.Context) {
 			"username": user.Username,
 			"email":    user.Email,
 		},
-		"token": token,
 	})
 }
 
@@ -87,7 +85,7 @@ func LoginUser(c *gin.Context) {
 	input.Email = utils.SanitizeEmail(input.Email)
 
 	var user models.User
-	if err := database.DB.Where("Email = ?", input.Email).First(&user).Error; err != nil {
+	if err := database.DB.Where("email = ?", input.Email).First(&user).Error; err != nil {
 		utils.ErrorResponse(c, 401, "Invalid credentials")
 		return
 	}
@@ -97,9 +95,8 @@ func LoginUser(c *gin.Context) {
 		return
 	}
 
-	token, err := middleware.GenerateJWT(user.ID)
-	if err != nil {
-		utils.ErrorResponse(c, 500, "Failed to generate token")
+	if err := middleware.SetUserSession(c, user.ID); err != nil {
+		utils.ErrorResponse(c, 500, "Failed to create session")
 		return
 	}
 
@@ -109,6 +106,30 @@ func LoginUser(c *gin.Context) {
 			"username": user.Username,
 			"email":    user.Email,
 		},
-		"token": token,
+	})
+}
+
+func LogoutUser(c *gin.Context) {
+	if err := middleware.ClearUserSession(c); err != nil {
+		utils.ErrorResponse(c, 500, "Failed to logout")
+		return
+	}
+
+	utils.SuccessResponse(c, 200, "Logout successful", nil)
+}
+
+func GetMe(c *gin.Context) {
+	user := middleware.GetCurrentUser(c)
+	if user == nil {
+		utils.ErrorResponse(c, 401, "User not authenticated")
+		return
+	}
+
+	utils.SuccessResponse(c, 200, "User profile fetched", gin.H{
+		"id":          user.ID,
+		"username":    user.Username,
+		"email":       user.Email,
+		"last_online": user.LastOnline,
+		"created_at":  user.CreatedAt,
 	})
 }

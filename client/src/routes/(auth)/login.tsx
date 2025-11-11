@@ -28,7 +28,7 @@ function RouteComponent() {
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api"
 
   const navigate = useNavigate()
-  const { user, token, setToken, setUser, setAuthLoading, authLoading } = useAuthStore()
+  const { setToken, setUser, setAuthLoading, authLoading } = useAuthStore()
 
   const login = async (email: string, password: string) => {
     setAuthLoading(true)

@@ -5,13 +5,15 @@ import { createFileRoute } from '@tanstack/react-router'
 export const Route = createFileRoute('/')({ component: App })
 
 function App() {
-  const { logout } = useAuthStore()
+  const { user, token, logout } = useAuthStore()
   return (
     <div>
       Hello
       <Button variant='destructive' onClick={logout}>
         Logout
       </Button>
+      {`User: ${user}`}
+      Token: {token}
     </div>
   )
 }
