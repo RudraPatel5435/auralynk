@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/useAuthStore";
 import { toast } from "sonner";
+import { useEffect } from "react";
 
 interface User {
   username: string;
@@ -70,6 +71,15 @@ function RouteComponent() {
       register(value.username, value.email, value.password)
     },
   });
+
+  useEffect(() => {
+    const sessionUser = localStorage.getItem('auth_user')
+    const sessionToken = localStorage.getItem('auth_token')
+    if (sessionToken || sessionUser) {
+      toast.info("You are already logged in")
+      navigate({ to: '/' })
+    }
+  }, [])
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-background">

@@ -12,12 +12,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/useAuthStore";
 import { toast } from "sonner";
+import { useEffect } from "react";
 
 interface User {
   email: string;
   password: string;
 }
-
 
 export const Route = createFileRoute('/(auth)/login')({
   component: RouteComponent,
@@ -28,7 +28,7 @@ function RouteComponent() {
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api"
 
   const navigate = useNavigate()
-  const { setToken, setUser, setAuthLoading, authLoading } = useAuthStore()
+  const { user, token, setToken, setUser, setAuthLoading, authLoading } = useAuthStore()
 
   const login = async (email: string, password: string) => {
     setAuthLoading(true)
@@ -69,6 +69,16 @@ function RouteComponent() {
       login(value.email, value.password)
     },
   });
+
+  useEffect(() => {
+    const sessionUser = localStorage.getItem('auth_user')
+    const sessionToken = localStorage.getItem('auth_token')
+    if (sessionToken || sessionUser) {
+      toast.info("You are already logged in")
+      navigate({ to: '/' })
+    }
+  }, [])
+
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-background">
       <Card className="w-full max-w-5xl overflow-hidden flex flex-col md:flex-row shadow-lg border-border">
