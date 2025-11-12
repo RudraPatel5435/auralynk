@@ -1,5 +1,3 @@
-
-import { useAuth } from "@/hooks/useAuth"
 import { useAuthStore } from "@/store/useAuthStore"
 import { useNavigate } from "@tanstack/react-router"
 import { toast } from "sonner"
@@ -9,8 +7,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
 export const useAuthActions = () => {
 
   const navigate = useNavigate()
-  const { setUser, setAuthLoading } = useAuthStore()
-  const { refreshUser } = useAuth()
+  const { setUser, setAuthLoading, setIsAuthenticated } = useAuthStore()
 
   const register = async (username: string, email: string, password: string) => {
     setAuthLoading(true)
@@ -24,16 +21,16 @@ export const useAuthActions = () => {
 
       const data = await response.json()
 
-      if (!data.success) {
-        throw new Error(data.message || "Registration failed")
-      }
+      if (!response.ok || !data.success) throw new Error(data.message || "Registration failed")
 
       const reqData = data.data
       setUser(reqData.user)
+      setIsAuthenticated(true)
+      toast.info("Account created succesfully!")
       navigate({ to: "/channels/@dev" })
     } catch (err: any) {
       console.error("Failed to register:", err)
-      toast.error(`${err}`)
+      toast.error(`${err}` || "Failed to register")
     } finally {
       setAuthLoading(false)
     }
@@ -51,16 +48,16 @@ export const useAuthActions = () => {
 
       const data = await response.json()
 
-      if (!data.success) {
-        throw new Error(data.message || "Login failed")
-      }
+      if (!response.ok || !data.success) throw new Error(data.message || "Login failed")
 
       const reqData = data.data
+      setIsAuthenticated(true)
       setUser(reqData.user)
+      toast.success("Welcome back!")
       navigate({ to: '/channels/@dev' })
     } catch (err: any) {
       console.error("Failed to login:", err)
-      toast.error(`${err}`)
+      toast.error(`${err}` || "Failed to login")
     } finally {
       setAuthLoading(false)
     }
@@ -76,14 +73,16 @@ export const useAuthActions = () => {
 
       const data = await response.json()
 
-      if (!data.success) {
+      if (!response.ok || !data.success) {
         throw new Error(data.message || "Logout failed")
       }
-      refreshUser()
-
+      setUser(null)
+      setIsAuthenticated(false)
+      toast.info("Logged Out succesfully")
+      navigate({ to: "/login" })
     } catch (err: any) {
       console.error("Failed to logout:", err)
-      toast.error(`${err}`)
+      toast.error(`${err}` || "Failed to logout")
     } finally {
       setAuthLoading(false)
     }

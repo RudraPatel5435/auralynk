@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { toast } from "sonner"
 
 export interface Channel {
@@ -9,7 +9,7 @@ export interface Channel {
   is_member: boolean
   is_admin: boolean
   member_count: number
-  created_at: string // ISO date string
+  created_at: string
 }
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api"
@@ -17,6 +17,7 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api"
 export const useChannels = () => {
   const [channels, setChannels] = useState<Channel[]>([])
   const [channelsLoading, setChannelsLoading] = useState(false)
+  const [channelActionsLoading, setChannelActionsLoading] = useState(false)
 
   const fetchChannels = async () => {
     setChannelsLoading(true)
@@ -29,25 +30,79 @@ export const useChannels = () => {
       if (!res.ok) throw new Error("Failed to fetch channels")
 
       const data = await res.json()
-      console.log(data)
-
       const channelList = data.data || data
       setChannels(channelList)
+      return true
     } catch (err) {
       console.error(err)
       toast.error(err instanceof Error ? err.message : "Error fetching channels")
+      return false
     } finally {
       setChannelsLoading(false)
     }
   }
 
-  useEffect(() => {
-    fetchChannels()
-  }, [])
+  const joinChannel = async (channelId: string) => {
+    setChannelActionsLoading(true)
+    try {
+      const res = await fetch(`${API_URL}/channels/${channelId}/join`, {
+        method: "POST",
+        credentials: "include"
+      })
+
+      if (!res.ok) throw new Error("Failed to join channel")
+
+      const data = await res.json()
+      if (data.success) {
+        console.log(JSON.stringify(data))
+        toast.success(`Joined ${data.channel_name} successfully!`)
+        return true
+      } else {
+        throw new Error(data.message || "Failed to join channel")
+      }
+    } catch (err) {
+      console.error(err || "")
+      toast.error(`${err}` || "Error joining channel")
+      return false
+    } finally {
+      setChannelActionsLoading(false)
+    }
+
+  }
+
+  const leaveChannel = async (channelId: string) => {
+    try {
+      const res = await fetch(`${API_URL}/channels/${channelId}/leave`, {
+        method: "POST",
+        credentials: "include",
+      })
+
+      if (!res.ok) throw new Error("Failed to leave channel")
+
+      const data = await res.json()
+
+      if (data.success) {
+        toast.success("Left channel successfully")
+        await fetchChannels()
+        return true
+      } else {
+        throw new Error(data.message || "Failed to leave channel")
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error(`${err}` || "Error leaving channel")
+      return false
+    } finally {
+      setChannelActionsLoading(false)
+    }
+  }
 
   return {
     channels,
     channelsLoading,
     refreshChannels: fetchChannels,
+    joinChannel,
+    leaveChannel,
+    channelActionsLoading,
   }
 }
