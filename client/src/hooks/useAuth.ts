@@ -8,6 +8,10 @@ export const useAuth = () => {
 
   const { user, setUser, authLoading, setAuthLoading, isAuthenticated, setIsAuthenticated } = useAuthStore()
 
+  useEffect(() => {
+    if (!isAuthenticated || !authLoading) getMe()
+  }, [])
+
   const getMe = async () => {
     setAuthLoading(true)
     try {
@@ -28,10 +32,6 @@ export const useAuth = () => {
       setAuthLoading(false)
     }
   }
-
-  useEffect(() => {
-    if (!isAuthenticated || !authLoading) getMe()
-  }, [])
 
   return {
     user,

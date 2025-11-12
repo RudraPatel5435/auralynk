@@ -1,14 +1,13 @@
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/useAuth'
+import { useAuthActions } from '@/hooks/useAuthActions'
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/')({ component: App })
 
 function App() {
   const { user } = useAuth()
-  const logout = async () => {
-    await fetch('http://localhost:8080/user/logout')
-  }
+  const { logout } = useAuthActions()
   return (
     <div>
       Hello

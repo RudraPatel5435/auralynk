@@ -1,5 +1,5 @@
 import { Loader2, SunIcon as Sunburst } from "lucide-react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useForm } from "@tanstack/react-form";
 import {
   Card,
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/useAuthStore";
-import { toast } from "sonner";
+import { useAuthActions } from "@/hooks/useAuthActions";
 
 interface User {
   email: string;
@@ -24,37 +24,8 @@ export const Route = createFileRoute('/(auth)/login')({
 
 function RouteComponent() {
 
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api"
-
-  const navigate = useNavigate()
-  const { setUser, setAuthLoading, authLoading } = useAuthStore()
-
-  const login = async (email: string, password: string) => {
-    setAuthLoading(true)
-    try {
-      const response = await fetch(`${API_URL}/user/login`, {
-        method: "POST",
-        credentials: "include",
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      })
-
-      const data = await response.json()
-
-      if (!data.success) {
-        throw new Error(data.message || "Login failed")
-      }
-
-      const reqData = data.data
-      setUser(reqData.user)
-      navigate({ to: '/' })
-    } catch (err: any) {
-      console.error("Failed to login:", err)
-      toast.error(`${err}`)
-    } finally {
-      setAuthLoading(false)
-    }
-  }
+  const { authLoading } = useAuthStore()
+  const { login } = useAuthActions()
 
   const defaultUser: User = {
     email: "",
