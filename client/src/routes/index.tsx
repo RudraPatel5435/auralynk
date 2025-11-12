@@ -15,7 +15,13 @@ function App() {
       <Button variant='destructive' onClick={logout}>
         Logout
       </Button>
-      {`User: ${user}`}
+      {user &&
+        <div className='flex flex-col gap-2'>
+          ID: {user.id}
+          username: {user.username}
+          email: {user.email}
+        </div>
+      }
     </div>
   )
 }

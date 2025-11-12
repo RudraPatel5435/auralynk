@@ -12,7 +12,8 @@ export const useAuth = () => {
     setAuthLoading(true)
     try {
       const res = await fetch(`${API_URL}/user/me`, {
-        method: "GET"
+        method: "GET",
+        credentials: 'include'
       })
       if (!res.ok) throw new Error("Failed to get user details")
       const data = await res.json()

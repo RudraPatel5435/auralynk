@@ -36,6 +36,7 @@ function RouteComponent() {
     try {
       const response = await fetch(`${API_URL}/user/register`, {
         method: "POST",
+        credentials: "include",
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email, password })
       })
