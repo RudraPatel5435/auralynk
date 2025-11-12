@@ -126,10 +126,10 @@ func GetMe(c *gin.Context) {
 	}
 
 	utils.SuccessResponse(c, 200, "User profile fetched", gin.H{
-		"id":          user.ID,
-		"username":    user.Username,
-		"email":       user.Email,
-		"last_online": user.LastOnline,
-		"created_at":  user.CreatedAt,
+		"id":       user.ID,
+		"username": user.Username,
+		"email":    user.Email,
+		// "last_online": user.LastOnline,
+		// "created_at":  user.CreatedAt,
 	})
 }

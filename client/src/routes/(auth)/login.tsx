@@ -12,7 +12,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/useAuthStore";
 import { toast } from "sonner";
-import { useEffect } from "react";
 
 interface User {
   email: string;
@@ -28,7 +27,7 @@ function RouteComponent() {
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api"
 
   const navigate = useNavigate()
-  const { setToken, setUser, setAuthLoading, authLoading } = useAuthStore()
+  const { setUser, setAuthLoading, authLoading } = useAuthStore()
 
   const login = async (email: string, password: string) => {
     setAuthLoading(true)
@@ -46,10 +45,7 @@ function RouteComponent() {
       }
 
       const reqData = data.data
-      setToken(reqData.token)
       setUser(reqData.user)
-      localStorage.setItem('auth_token', reqData.token)
-      localStorage.setItem('auth_user', JSON.stringify(reqData.token))
       navigate({ to: '/' })
     } catch (err: any) {
       console.error("Failed to login:", err)
@@ -69,15 +65,6 @@ function RouteComponent() {
       login(value.email, value.password)
     },
   });
-
-  useEffect(() => {
-    const sessionUser = localStorage.getItem('auth_user')
-    const sessionToken = localStorage.getItem('auth_token')
-    if (sessionToken || sessionUser) {
-      toast.info("You are already logged in")
-      navigate({ to: '/' })
-    }
-  }, [])
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-background">

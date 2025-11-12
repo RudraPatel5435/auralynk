@@ -1,11 +1,14 @@
 import { Button } from '@/components/ui/button'
-import { useAuthStore } from '@/store/useAuthStore'
+import { useAuth } from '@/hooks/useAuth'
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/')({ component: App })
 
 function App() {
-  const { user, token, logout } = useAuthStore()
+  const { user } = useAuth()
+  const logout = async () => {
+    await fetch('http://localhost:8080/user/logout')
+  }
   return (
     <div>
       Hello
@@ -13,7 +16,6 @@ function App() {
         Logout
       </Button>
       {`User: ${user}`}
-      Token: {token}
     </div>
   )
 }
