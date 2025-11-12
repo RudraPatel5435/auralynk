@@ -13,15 +13,16 @@ export const useAuth = () => {
     try {
       const res = await fetch(`${API_URL}/user/me`, {
         method: "GET",
-        credentials: 'include'
+        credentials: "include",
       })
-      if (!res.ok) throw new Error("Failed to get user details")
+      if (!res.ok) throw new Error("Unauthorized or session expired")
       const data = await res.json()
-      setUser(data)
+      setUser(data.data || data)
       setIsAuthenticated(true)
     } catch (err) {
-      toast.error(`${err}`)
       console.error(err)
+      toast.error(`${err}`)
+      setUser(null)
       setIsAuthenticated(false)
     } finally {
       setAuthLoading(false)
@@ -29,8 +30,13 @@ export const useAuth = () => {
   }
 
   useEffect(() => {
-    if (!isAuthenticated) getMe()
-  }, [isAuthenticated])
+    if (!isAuthenticated || !authLoading) getMe()
+  }, [])
 
-  return { user, isAuthenticated, authLoading }
+  return {
+    user,
+    isAuthenticated,
+    authLoading,
+    refreshUser: getMe,
+  }
 }

@@ -8,7 +8,7 @@ interface User {
 
 interface AuthState {
   user: User | null;
-  setUser: (user: User) => void;
+  setUser: (user: User | null) => void;
   authLoading: boolean;
   setAuthLoading: (authLoading: boolean) => void;
   isAuthenticated: boolean;
@@ -19,7 +19,7 @@ export const useAuthStore = create<AuthState>(set => ({
   user: null,
   setUser: (user) => set({ user }),
   authLoading: false,
-  setAuthLoading: (authLoading) => set({ authLoading }),
+  setAuthLoading: (value) => set({ authLoading: value }),
   isAuthenticated: false,
-  setIsAuthenticated: (isAuthenticated) => set({ isAuthenticated })
+  setIsAuthenticated: (value) => set({ isAuthenticated: value })
 })) 
