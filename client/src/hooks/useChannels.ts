@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
+interface Members {
+  id: string
+  username: string
+}
+
 export interface Channel {
   id: string
   name: string
@@ -9,6 +14,7 @@ export interface Channel {
   is_member: boolean
   is_admin: boolean
   member_count: number
+  members: Members
   created_at: string
 }
 

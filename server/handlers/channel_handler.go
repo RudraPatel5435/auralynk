@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"fmt"
-
 	"github.com/RudraPatel5435/auralynk/server/database"
 	"github.com/RudraPatel5435/auralynk/server/middleware"
 	"github.com/RudraPatel5435/auralynk/server/models"
@@ -66,16 +64,21 @@ func GetChannels(c *gin.Context) {
 		return
 	}
 
+	var channelIDs []uuid.UUID
+
+	database.DB.Table("channels").
+		Select("DISTINCT channels.id").
+		Joins("LEFT JOIN channel_members ON channel_members.channel_id = channels.id").
+		Where("channels.access_type = ? OR channel_members.user_id = ?", "public", user.ID).
+		Pluck("id", &channelIDs)
+
 	var channels []models.Channel
 
 	err := database.DB.
 		Preload("Admin").
 		Preload("Members").
-		Joins("LEFT JOIN channel_members ON channel_members.channel_id = channels.id").
-		Where("channels.access_type = ? OR channel_members.user_id = ?", "public", user.ID).
-		Group("channels.id").
+		Where("id IN ?", channelIDs).
 		Find(&channels).Error
-	fmt.Println("no shit errors", channels)
 
 	if err != nil {
 		utils.ErrorResponse(c, 500, "Failed to fetch channels")
@@ -85,11 +88,16 @@ func GetChannels(c *gin.Context) {
 	var response []gin.H
 	for _, channel := range channels {
 		isMember := false
+
+		var members []gin.H
 		for _, member := range channel.Members {
 			if member.ID == user.ID {
 				isMember = true
-				break
 			}
+			members = append(members, gin.H{
+				"id":       member.ID,
+				"username": member.Username,
+			})
 		}
 
 		response = append(response, gin.H{
@@ -100,6 +108,7 @@ func GetChannels(c *gin.Context) {
 			"is_member":    isMember,
 			"is_admin":     channel.AdminID == user.ID,
 			"member_count": len(channel.Members),
+			"members":      members,
 			"created_at":   channel.CreatedAt,
 		})
 	}
