@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
 export interface Channel {
@@ -19,6 +19,10 @@ export const useChannels = () => {
   const [channelsLoading, setChannelsLoading] = useState(false)
   const [channelActionsLoading, setChannelActionsLoading] = useState(false)
 
+  useEffect(() => {
+    fetchChannels()
+  }, [])
+
   const fetchChannels = async () => {
     setChannelsLoading(true)
     try {
@@ -30,6 +34,7 @@ export const useChannels = () => {
       if (!res.ok) throw new Error("Failed to fetch channels")
 
       const data = await res.json()
+      console.log(data)
       const channelList = data.data || data
       setChannels(channelList)
       return true
@@ -97,12 +102,39 @@ export const useChannels = () => {
     }
   }
 
+  const createChannel = async (name: string, access_type: string) => {
+    setChannelActionsLoading(true)
+    try {
+      const res = await fetch(`${API_URL}/channels/create`, {
+        method: "POST",
+        credentials: "include",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, access_type })
+      })
+
+      if (!res.ok) throw new Error("Failed to create channel")
+
+      const data = await res.json()
+      if (data.success) {
+        toast.success("Channel created successfully")
+        await fetchChannels()
+        return true
+      }
+    } catch (err) {
+      console.log(err)
+      toast.error(`${err}` || 'Create channel failed')
+      return false
+    }
+  }
+
+
   return {
     channels,
     channelsLoading,
     refreshChannels: fetchChannels,
     joinChannel,
     leaveChannel,
+    createChannel,
     channelActionsLoading,
   }
 }

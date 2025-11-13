@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"fmt"
+
 	"github.com/RudraPatel5435/auralynk/server/database"
 	"github.com/RudraPatel5435/auralynk/server/middleware"
 	"github.com/RudraPatel5435/auralynk/server/models"
@@ -67,12 +69,13 @@ func GetChannels(c *gin.Context) {
 	var channels []models.Channel
 
 	err := database.DB.
-		Distinct("channels.id").
+		Distinct("id").
 		Preload("Admin").
 		Preload("Members").
 		Joins("LEFT JOIN channel_members ON channel_members.channel_id = channels.id").
 		Where("channels.access_type = ? OR channel_members.user_id = ?", "public", user.ID).
 		Find(&channels).Error
+	fmt.Println("no shit errors", channels)
 
 	if err != nil {
 		utils.ErrorResponse(c, 500, "Failed to fetch channels")
@@ -203,7 +206,7 @@ func UpdateChannel(c *gin.Context) {
 		return
 	}
 
-	updates := make(map[string]interface{})
+	updates := make(map[string]any)
 
 	if input.Name != nil {
 		if err := utils.ValidateChannelName(*input.Name); err != nil {
