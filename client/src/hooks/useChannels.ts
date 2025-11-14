@@ -22,6 +22,7 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api"
 
 export const useChannels = () => {
   const [channels, setChannels] = useState<Channel[]>([])
+  const [channel, setChannel] = useState<Channel>()
   const [channelsLoading, setChannelsLoading] = useState(false)
   const [channelActionsLoading, setChannelActionsLoading] = useState(false)
 
@@ -40,13 +41,34 @@ export const useChannels = () => {
       if (!res.ok) throw new Error("Failed to fetch channels")
 
       const data = await res.json()
-      console.log(data)
       const channelList = data.data || data
       setChannels(channelList)
       return true
     } catch (err) {
       console.error(err)
       toast.error(err instanceof Error ? err.message : "Error fetching channels")
+      return false
+    } finally {
+      setChannelsLoading(false)
+    }
+  }
+
+  const fetchChannel = async (id: string) => {
+    setChannelsLoading(true)
+    try {
+      const res = await fetch(`${API_URL}/channels/${id}`, {
+        method: "GET",
+        credentials: "include",
+      })
+
+      if (!res.ok) throw new Error("Failed to fetch channel")
+
+      const data = await res.json()
+      setChannel(data.data)
+      return true
+    } catch (err) {
+      console.error(err)
+      toast.error(err instanceof Error ? err.message : "Error fetching channel")
       return false
     } finally {
       setChannelsLoading(false)
@@ -65,7 +87,6 @@ export const useChannels = () => {
 
       const data = await res.json()
       if (data.success) {
-        console.log(JSON.stringify(data))
         toast.success(`Joined ${data.channel_name} successfully!`)
         return true
       } else {
@@ -127,7 +148,7 @@ export const useChannels = () => {
         return true
       }
     } catch (err) {
-      console.log(err)
+      console.error(err)
       toast.error(`${err}` || 'Create channel failed')
       return false
     }
@@ -136,8 +157,10 @@ export const useChannels = () => {
 
   return {
     channels,
+    channel,
     channelsLoading,
     refreshChannels: fetchChannels,
+    fetchChannel,
     joinChannel,
     leaveChannel,
     createChannel,

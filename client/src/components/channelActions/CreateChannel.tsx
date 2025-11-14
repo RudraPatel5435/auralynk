@@ -25,7 +25,7 @@ const CreateChannel = () => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className="flex items-center gap-2">
+        <Button className="flex items-center gap-2 m-2">
           <Plus className="h-4 w-4" />
           Create Channel
         </Button>
