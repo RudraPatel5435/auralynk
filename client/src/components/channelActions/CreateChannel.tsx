@@ -11,14 +11,14 @@ import {
 
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Button } from "../ui/button"
-import { Plus } from "lucide-react"
+import { Loader2, Plus } from "lucide-react"
 import { Label } from "../ui/label"
 import { Input } from "../ui/input"
 import { useState } from "react"
 import { useChannels } from "@/hooks/useChannels"
 
 const CreateChannel = () => {
-  const { createChannel } = useChannels()
+  const { createChannel, channelActionsLoading } = useChannels()
   const [channelName, setChannelName] = useState("")
   const [accessType, setAccessType] = useState("public")
 
@@ -32,7 +32,11 @@ const CreateChannel = () => {
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-[425px]">
-        <form onSubmit={() => { createChannel(channelName, accessType) }} className="space-y-6">
+        <form onSubmit={(e) => {
+          e.preventDefault()
+          createChannel({ name: channelName, access_type: accessType })
+        }}
+          className="space-y-6">
           <DialogHeader>
             <DialogTitle className="text-primary">Create New Channel</DialogTitle>
             <DialogDescription>
@@ -78,7 +82,12 @@ const CreateChannel = () => {
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
             </DialogClose>
-            <Button type="submit">Create Channel</Button>
+            <Button
+              type="submit"
+              disabled={channelActionsLoading}
+            >
+              {channelActionsLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Channel"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

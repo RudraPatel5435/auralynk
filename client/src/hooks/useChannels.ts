@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api"
 
 interface Members {
   id: string
@@ -19,152 +21,138 @@ export interface Channel {
   created_at: string
 }
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api"
+export const useChannels = (channelId?: string) => {
+  const queryClient = useQueryClient()
 
-export const useChannels = () => {
-  const [channels, setChannels] = useState<Channel[]>([])
-  const [channel, setChannel] = useState<Channel>()
-  const [channelsLoading, setChannelsLoading] = useState(false)
-  const [channelActionsLoading, setChannelActionsLoading] = useState(false)
-
-  useEffect(() => {
-    fetchChannels()
-  }, [])
-
-  const fetchChannels = async () => {
-    setChannelsLoading(true)
-    try {
+  const {
+    data: channels = [] as Channel[],
+    isLoading: channelsLoading,
+    refetch: refreshChannels,
+  } = useQuery<Channel[]>({
+    queryKey: ["channels"],
+    queryFn: async () => {
       const res = await fetch(`${API_URL}/channels`, {
+        credentials: "include",
+        method: "GET",
+      })
+      if (!res.ok) throw new Error("Failed to load channels")
+      const data = await res.json()
+      return data.data || data
+    },
+  })
+
+  const {
+    data: channel,
+    isLoading: channelLoading,
+  } = useQuery<Channel>({
+    queryKey: [`channel-${channelId}`, channelId],
+    queryFn: async () => {
+      const res = await fetch(`${API_URL}/channels/${channelId}`, {
         method: "GET",
         credentials: "include",
       })
-
-      if (!res.ok) throw new Error("Failed to fetch channels")
-
+      if (!res.ok) throw new Error("Failed to load channel")
       const data = await res.json()
-      const channelList = data.data || data
-      setChannels(channelList)
-      return true
-    } catch (err) {
-      console.error(err)
-      toast.error(err instanceof Error ? err.message : "Error fetching channels")
-      return false
-    } finally {
-      setChannelsLoading(false)
-    }
-  }
+      return data.data
+    },
+    enabled: !!channelId,
+  })
 
-  const fetchChannel = async (id: string) => {
-    setChannelsLoading(true)
-    try {
-      const res = await fetch(`${API_URL}/channels/${id}`, {
-        method: "GET",
-        credentials: "include",
-      })
+  // const fetchChannelById = async (id: string): Promise<Channel> => {
+  //   const res = await fetch(`${API_URL}/channels/${id}`, {
+  //     credentials: "include",
+  //     method: "GET",
+  //   })
+  //   if (!res.ok) throw new Error("Failed to load channel")
+  //   const data = await res.json()
+  //   return data
+  // }
+  //
+  // const {
+  //   data: channel,
+  //   isLoading: channelLoading,
+  // } = useQuery<Channel>({
+  //   queryKey: ["channel", undefined], // placeholder, updated manually
+  //   queryFn: () => Promise.resolve(undefined as never),
+  //   enabled: false,
+  // })
+  //
+  // const fetchChannel = async (id: string) => {
+  //   return queryClient.fetchQuery({
+  //     queryKey: ["channel", id],
+  //     queryFn: () => fetchChannelById(id),
+  //   })
+  // }
 
-      if (!res.ok) throw new Error("Failed to fetch channel")
-
-      const data = await res.json()
-      setChannel(data.data)
-      return true
-    } catch (err) {
-      console.error(err)
-      toast.error(err instanceof Error ? err.message : "Error fetching channel")
-      return false
-    } finally {
-      setChannelsLoading(false)
-    }
-  }
-
-  const joinChannel = async (channelId: string) => {
-    setChannelActionsLoading(true)
-    try {
+  const joinMutation = useMutation({
+    mutationFn: async (channelId: string) => {
       const res = await fetch(`${API_URL}/channels/${channelId}/join`, {
         method: "POST",
-        credentials: "include"
+        credentials: "include",
       })
-
       if (!res.ok) throw new Error("Failed to join channel")
+      return await res.json()
+    },
+    onSuccess: (data) => {
+      toast.success(`Joined #${data.channel_name}`)
+      queryClient.invalidateQueries({ queryKey: ["channels"] })
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Joining failed")
+    },
+  })
 
-      const data = await res.json()
-      if (data.success) {
-        toast.success(`Joined ${data.channel_name} successfully!`)
-        return true
-      } else {
-        throw new Error(data.message || "Failed to join channel")
-      }
-    } catch (err) {
-      console.error(err || "")
-      toast.error(`${err}` || "Error joining channel")
-      return false
-    } finally {
-      setChannelActionsLoading(false)
-    }
-
-  }
-
-  const leaveChannel = async (channelId: string) => {
-    try {
+  const leaveMutation = useMutation({
+    mutationFn: async (channelId: string) => {
       const res = await fetch(`${API_URL}/channels/${channelId}/leave`, {
         method: "POST",
         credentials: "include",
       })
-
       if (!res.ok) throw new Error("Failed to leave channel")
+      return await res.json()
+    },
+    onSuccess: (data) => {
+      toast.success("Left the channel")
 
-      const data = await res.json()
+      queryClient.invalidateQueries({ queryKey: ["channels"] })
+      queryClient.invalidateQueries({ queryKey: ["channel", data.id] })
+    },
+    onError: (err: any) => toast.error(err.message),
+  })
 
-      if (data.success) {
-        toast.success("Left channel successfully")
-        await fetchChannels()
-        return true
-      } else {
-        throw new Error(data.message || "Failed to leave channel")
-      }
-    } catch (err) {
-      console.error(err)
-      toast.error(`${err}` || "Error leaving channel")
-      return false
-    } finally {
-      setChannelActionsLoading(false)
-    }
-  }
-
-  const createChannel = async (name: string, access_type: string) => {
-    setChannelActionsLoading(true)
-    try {
+  const createMutation = useMutation({
+    mutationFn: async (payload: { name: string; access_type: string }) => {
       const res = await fetch(`${API_URL}/channels/create`, {
         method: "POST",
         credentials: "include",
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, access_type })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       })
-
       if (!res.ok) throw new Error("Failed to create channel")
-
-      const data = await res.json()
-      if (data.success) {
-        toast.success("Channel created successfully")
-        await fetchChannels()
-        return true
-      }
-    } catch (err) {
-      console.error(err)
-      toast.error(`${err}` || 'Create channel failed')
-      return false
-    }
-  }
+      return await res.json()
+    },
+    onSuccess: () => {
+      toast.success("Channel created")
+      queryClient.invalidateQueries({ queryKey: ["channels"] })
+    },
+    onError: (err: any) => toast.error(err.message),
+  })
 
 
   return {
     channels,
     channel,
+    refreshChannels,
+
     channelsLoading,
-    refreshChannels: fetchChannels,
-    fetchChannel,
-    joinChannel,
-    leaveChannel,
-    createChannel,
-    channelActionsLoading,
+    channelLoading,
+    channelActionsLoading:
+      joinMutation.isPending ||
+      leaveMutation.isPending ||
+      createMutation.isPending,
+
+    joinChannel: joinMutation.mutateAsync,
+    leaveChannel: leaveMutation.mutateAsync,
+    createChannel: createMutation.mutateAsync,
   }
 }

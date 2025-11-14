@@ -48,6 +48,10 @@ func CreateChannel(c *gin.Context) {
 		return
 	}
 
+	if err := database.DB.Model(&user).Association("OwnedChannels").Append(channel); err != nil {
+		utils.ErrorResponse(c, 500, "Failed to associate user to channel")
+	}
+
 	utils.SuccessResponse(c, 201, "Channel created successfully", gin.H{
 		"id":          channel.ID,
 		"name":        channel.Name,
