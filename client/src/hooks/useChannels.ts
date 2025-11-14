@@ -11,6 +11,7 @@ export interface Channel {
   name: string
   access_type: string
   admin_id: string
+  admin_username: string
   is_member: boolean
   is_admin: boolean
   member_count: number

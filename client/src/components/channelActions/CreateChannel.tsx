@@ -34,7 +34,7 @@ const CreateChannel = () => {
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={() => { createChannel(channelName, accessType) }} className="space-y-6">
           <DialogHeader>
-            <DialogTitle>Create New Channel</DialogTitle>
+            <DialogTitle className="text-primary">Create New Channel</DialogTitle>
             <DialogDescription>
               Enter details for your new channel below.
             </DialogDescription>
@@ -43,7 +43,7 @@ const CreateChannel = () => {
           <div className="grid gap-4">
             {/* Channel Name */}
             <div className="grid gap-2">
-              <Label htmlFor="channel-name">Channel Name</Label>
+              <Label htmlFor="channel-name" className="text-primary">Channel Name</Label>
               <Input
                 id="channel-name"
                 placeholder="e.g. general"
@@ -55,7 +55,7 @@ const CreateChannel = () => {
 
             {/* Access Type */}
             <div className="grid gap-2">
-              <Label>Access Type</Label>
+              <Label className="text-primary">Access Type</Label>
               <RadioGroup
                 defaultValue="public"
                 value={accessType}

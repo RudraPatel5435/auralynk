@@ -16,13 +16,11 @@ function RouteComponent() {
   return (
     <div className="flex-1 flex flex-col">
       <div className="h-12 px-4 flex items-center border-b border-border bg-[hsl(var(--color-bg-secondary))]">
-        {channel ? (
+        {channel && (
           <>
             <Hash className="h-5 w-5 text-muted-foreground mr-2" />
             <span className="font-semibold">{channel.name}</span>
           </>
-        ) : (
-          <span className="font-semibold">Welcome to Auralynk</span>
         )}
       </div>
 
