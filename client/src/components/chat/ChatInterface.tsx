@@ -12,9 +12,30 @@ interface ChatInterfaceProps {
   channelName: string
 }
 
+interface HistoricalMessage {
+  id: string
+  content: string
+  created_at: string
+  user: {
+    id: string
+    username: string
+  }
+}
+
+interface CombinedMessage {
+  id: string
+  content: string
+  created_at?: string
+  timestamp?: string
+  user: {
+    id: string
+    username: string
+  }
+}
+
 export const ChatInterface = ({ channelId, channelName }: ChatInterfaceProps) => {
   const [inputValue, setInputValue] = useState('')
-  const [historicalMessages, setHistoricalMessages] = useState<any[]>([])
+  const [historicalMessages, setHistoricalMessages] = useState<HistoricalMessage[]>([])
   const [isLoadingHistory, setIsLoadingHistory] = useState(true)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -71,19 +92,24 @@ export const ChatInterface = ({ channelId, channelName }: ChatInterfaceProps) =>
     sendTyping()
   }
 
-  const allMessages = [
+  const allMessages: CombinedMessage[] = [
     ...historicalMessages,
-    ...wsMessages.filter(m => m.type === 'message'),
-  ].reduce((unique, msg) => {
-    const isDuplicate = unique.some(m => m.id === msg.message_id || m.id === msg.id)
+    ...wsMessages.filter((m): m is WSMessage => m.type === 'message'),
+  ].reduce((unique: CombinedMessage[], msg: HistoricalMessage | WSMessage) => {
+    const msgId = 'message_id' in msg ? msg.message_id : msg.id
+    const isDuplicate = unique.some(m => m.id === msgId)
+
     if (!isDuplicate) {
       unique.push({
-        ...msg,
-        id: msg.message_id || msg.id,
+        id: msgId || msg.id || '',
+        content: msg.content || '',
+        created_at: 'created_at' in msg ? msg.created_at : undefined,
+        timestamp: 'timestamp' in msg ? msg.timestamp : undefined,
+        user: msg.user,
       })
     }
     return unique
-  }, [] as any[])
+  }, [])
 
   const typingUsers = Object.keys(isTyping).filter(id => id !== currentUser?.id)
 
@@ -102,21 +128,20 @@ export const ChatInterface = ({ channelId, channelName }: ChatInterfaceProps) =>
           </div>
         ) : (
           <div className="space-y-1">
-            {allMessages.map((msg, idx) => (
+            {allMessages.map((msg) => (
               <ChatMessage
-                key={msg.id || `msg-${idx}`}
+                key={msg.id}
                 id={msg.id}
                 content={msg.content}
                 username={msg.user.username}
                 userId={msg.user.id}
-                timestamp={msg.created_at || msg.timestamp}
+                timestamp={msg.created_at || msg.timestamp || new Date().toISOString()}
                 isCurrentUser={msg.user.id === currentUser?.id}
               />
             ))}
           </div>
         )}
 
-        {/* Typing Indicator */}
         {typingUsers.length > 0 && (
           <div className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground">
             <div className="flex gap-1">
@@ -129,7 +154,6 @@ export const ChatInterface = ({ channelId, channelName }: ChatInterfaceProps) =>
         )}
       </ScrollArea>
 
-      {/* Message Input */}
       <div className="p-4 border-t border-border">
         <form onSubmit={handleSendMessage} className="flex gap-2">
           <Input
@@ -151,7 +175,7 @@ export const ChatInterface = ({ channelId, channelName }: ChatInterfaceProps) =>
         </form>
 
         {!isConnected && (
-          <p className="text-xs text-destructive mt-2">
+          <p className="text-xs text-primary mt-2 ml-3">
             Connecting to chat...
           </p>
         )}

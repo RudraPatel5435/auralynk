@@ -4,15 +4,22 @@
 
 [] Auralynk (name, channels) -> Vyenet (name, devspace)
 [] sub spcace in spaces for chatting, voice chat and video chat
-[] chatting func with previous chat when loading back
-[] when creating private devspace, provide a code for other to join
+[] view members in the space
+[] ability to change name of devspace
+[] ability to change acces_type of devspace
 [] Exalidraw Integration
-[-] cache implementation
-[] chat/ws integration
 [] webrtc integration
+[-] chatting func with previous chat when loading back
+[-] cache implementation
+[-] chat/ws integration
 [-] clicking on devspace should change url 
 [-] join space func
 
 Pages
-[-] 404
 [] landing Page
+[-] 404
+
+Future
+[] when creating private devspace, provide a code for other to join
+[] kick members from space by admin
+[] admin can make meta admins with diff permissions

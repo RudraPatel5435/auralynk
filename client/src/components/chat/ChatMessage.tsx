@@ -18,7 +18,7 @@ export const ChatMessage = ({
   const timeAgo = formatDistanceToNow(new Date(timestamp), { addSuffix: true })
 
   return (
-    <div className={`flex gap-3 p-2 hover:bg-accent/50 rounded group ${isCurrentUser ? 'bg-primary/5' : ''
+    <div className={`flex gap-3 p-2 rounded group ${isCurrentUser ? 'bg-accent/30' : ''
       }`}>
       <div className="shrink-0">
         <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold">

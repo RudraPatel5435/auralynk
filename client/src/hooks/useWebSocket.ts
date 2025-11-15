@@ -24,6 +24,7 @@ export const useWebSocket = ({ channelId, enabled = true }: UseWebSocketProps) =
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>()
   const typingTimeoutRef = useRef<NodeJS.Timeout>()
+  const isConnectedRef = useRef(false)
 
   const connect = useCallback(() => {
     if (!enabled || !channelId) return
@@ -36,6 +37,7 @@ export const useWebSocket = ({ channelId, enabled = true }: UseWebSocketProps) =
       ws.onopen = () => {
         console.log('WebSocket connected')
         setIsConnected(true)
+        isConnectedRef.current = true
       }
 
       ws.onmessage = (event) => {
@@ -72,14 +74,13 @@ export const useWebSocket = ({ channelId, enabled = true }: UseWebSocketProps) =
 
       ws.onclose = (event) => {
         console.log('WebSocket disconnected')
-        const wasConnected = isConnected
+        const wasConnected = isConnectedRef.current
         setIsConnected(false)
+        isConnectedRef.current = false
 
         if (wasConnected && event.code !== 1000) {
-          toast.error('Disconnected from chat')
         }
 
-        // Attempt to reconnect after 3 seconds only if it was an unexpected close
         if (event.code !== 1000) {
           reconnectTimeoutRef.current = setTimeout(() => {
             connect()
@@ -119,6 +120,7 @@ export const useWebSocket = ({ channelId, enabled = true }: UseWebSocketProps) =
 
   const sendTyping = useCallback(() => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      // Clear existing timeout
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current)
       }
