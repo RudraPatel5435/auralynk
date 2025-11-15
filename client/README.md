@@ -7,7 +7,7 @@
 [] chatting func with previous chat when loading back
 [] when creating private devspace, provide a code for other to join
 [] Exalidraw Integration
-[] cache implementation
+[-] cache implementation
 [] chat/ws integration
 [] webrtc integration
 [-] clicking on devspace should change url 

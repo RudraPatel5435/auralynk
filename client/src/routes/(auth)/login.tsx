@@ -10,7 +10,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useLogin } from "@/hooks/useAuth";
+import { useIsAuthenticated, useLogin } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 interface User {
@@ -25,6 +25,7 @@ export const Route = createFileRoute('/(auth)/login')({
 function RouteComponent() {
 
   const { mutateAsync, isPending } = useLogin()
+  const { isAuthenticated } = useIsAuthenticated()
   const navigate = useNavigate();
 
   const defaultUser: User = {
@@ -47,6 +48,8 @@ function RouteComponent() {
       }
     },
   });
+
+  if (isAuthenticated) navigate({ to: '/channels/@dev' })
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-background">
