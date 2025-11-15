@@ -81,24 +81,6 @@ function RouteComponent() {
           {!showFriends ? (
             <div>
               <div className="text-xs uppercase text-muted-foreground px-2 py-2 font-semibold">
-                Joined DevSpaces ({joinedChannels.length})
-              </div>
-
-              <div className="space-y-1">
-                {joinedChannels.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase())).map(channel => (
-                  <Button key={channel.id} variant="ghost" className="flex w-full justify-start gap-2 px-2" asChild>
-                    <Link to="/channels/$id" params={{ id: channel.id }}>
-                      <Hash className="h-4 w-4 text-muted-foreground" />
-                      <span>{channel.name}</span>
-                    </Link>
-                  </Button>
-                ))}
-
-                {joinedChannels.length === 0 && (
-                  <p className="px-2 py-4 text-sm text-muted-foreground">No spaces joined yet.</p>
-                )}
-              </div>
-              <div className="text-xs uppercase text-muted-foreground px-2 py-2 font-semibold">
                 Your DevSpaces ({userChannels.length})
               </div>
 
@@ -114,6 +96,25 @@ function RouteComponent() {
 
                 {userChannels.length === 0 && (
                   <p className="px-2 py-4 text-sm text-muted-foreground">No channels created yet.</p>
+                )}
+              </div>
+
+              <div className="text-xs uppercase text-muted-foreground px-2 py-2 font-semibold">
+                Joined DevSpaces ({joinedChannels.length})
+              </div>
+
+              <div className="space-y-1">
+                {joinedChannels.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase())).map(channel => (
+                  <Button key={channel.id} variant="ghost" className="flex w-full justify-start gap-2 px-2" asChild>
+                    <Link to="/channels/$id" params={{ id: channel.id }}>
+                      <Hash className="h-4 w-4 text-muted-foreground" />
+                      <span>{channel.name}</span>
+                    </Link>
+                  </Button>
+                ))}
+
+                {joinedChannels.length === 0 && (
+                  <p className="px-2 py-4 text-sm text-muted-foreground">No spaces joined yet.</p>
                 )}
               </div>
             </div>
