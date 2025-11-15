@@ -3,7 +3,7 @@ import { Send, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { useWebSocket } from '@/hooks/useWebSocket'
+import { useWebSocket, WSMessage } from '@/hooks/useWebSocket'
 import { ChatMessage } from '@/components/chat/ChatMessage'
 import { useCurrentUser } from '@/hooks/useAuth'
 
@@ -37,7 +37,8 @@ export const ChatInterface = ({ channelId, channelName }: ChatInterfaceProps) =>
 
         if (response.ok) {
           const data = await response.json()
-          setHistoricalMessages(data.data.messages || [])
+          const messages = data.data.messages || []
+          setHistoricalMessages(messages.reverse())
         }
       } catch (err) {
         console.error('Failed to fetch message history:', err)
@@ -73,7 +74,16 @@ export const ChatInterface = ({ channelId, channelName }: ChatInterfaceProps) =>
   const allMessages = [
     ...historicalMessages,
     ...wsMessages.filter(m => m.type === 'message'),
-  ]
+  ].reduce((unique, msg) => {
+    const isDuplicate = unique.some(m => m.id === msg.message_id || m.id === msg.id)
+    if (!isDuplicate) {
+      unique.push({
+        ...msg,
+        id: msg.message_id || msg.id,
+      })
+    }
+    return unique
+  }, [] as any[])
 
   const typingUsers = Object.keys(isTyping).filter(id => id !== currentUser?.id)
 

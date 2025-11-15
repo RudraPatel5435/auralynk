@@ -36,7 +36,6 @@ export const useWebSocket = ({ channelId, enabled = true }: UseWebSocketProps) =
       ws.onopen = () => {
         console.log('WebSocket connected')
         setIsConnected(true)
-        toast.success('Connected to chat')
       }
 
       ws.onmessage = (event) => {
@@ -56,9 +55,9 @@ export const useWebSocket = ({ channelId, enabled = true }: UseWebSocketProps) =
               })
             }, 3000)
           } else if (data.type === 'user_joined') {
-            toast.info(`${data.user.username} joined the channel`)
+            console.log(`${data.user.username} joined the channel`)
           } else if (data.type === 'user_left') {
-            toast.info(`${data.user.username} left the channel`)
+            console.log(`${data.user.username} left the channel`)
           } else if (data.type === 'error') {
             toast.error(data.content || 'An error occurred')
           }
@@ -69,16 +68,23 @@ export const useWebSocket = ({ channelId, enabled = true }: UseWebSocketProps) =
 
       ws.onerror = (error) => {
         console.error('WebSocket error:', error)
-        toast.error('Connection error')
       }
 
-      ws.onclose = () => {
+      ws.onclose = (event) => {
         console.log('WebSocket disconnected')
+        const wasConnected = isConnected
         setIsConnected(false)
 
-        reconnectTimeoutRef.current = setTimeout(() => {
-          connect()
-        }, 3000)
+        if (wasConnected && event.code !== 1000) {
+          toast.error('Disconnected from chat')
+        }
+
+        // Attempt to reconnect after 3 seconds only if it was an unexpected close
+        if (event.code !== 1000) {
+          reconnectTimeoutRef.current = setTimeout(() => {
+            connect()
+          }, 3000)
+        }
       }
 
       wsRef.current = ws
@@ -135,6 +141,7 @@ export const useWebSocket = ({ channelId, enabled = true }: UseWebSocketProps) =
 
     return () => {
       disconnect()
+      setMessages([])
     }
   }, [connect, disconnect])
 
