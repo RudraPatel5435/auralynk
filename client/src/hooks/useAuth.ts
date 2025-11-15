@@ -1,42 +1,48 @@
-import { useAuthStore } from "@/store/useAuthStore"
-import { useEffect } from "react"
-import { toast } from "sonner"
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { userApi } from '@/lib/api';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
+export const authKeys = {
+  currentUser: ['auth', 'currentUser'] as const,
+}
 
-export const useAuth = () => {
+export function useCurrentUser() {
+  return useQuery({
+    queryKey: authKeys.currentUser,
+    queryFn: userApi.getCurrentUser,
+    retry: false,
+    staleTime: Infinity, // session doesn't change unless i trigger it
+  });
+}
 
-  const { user, setUser, authLoading, setAuthLoading, isAuthenticated, setIsAuthenticated } = useAuthStore()
+export function useLogin() {
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (!isAuthenticated || !authLoading) getMe()
-  }, [])
+  return useMutation({
+    mutationFn: userApi.login,
+    onSuccess: (data) => {
+      queryClient.setQueryData(authKeys.currentUser, data);
+    },
+  });
+}
 
-  const getMe = async () => {
-    setAuthLoading(true)
-    try {
-      const res = await fetch(`${API_URL}/user/me`, {
-        method: "GET",
-        credentials: "include",
-      })
-      if (!res.ok) throw new Error("Unauthorized or session expired")
-      const data = await res.json()
-      setUser(data.data || data)
-      setIsAuthenticated(true)
-    } catch (err) {
-      console.error(err)
-      toast.error(`${err}`)
-      setUser(null)
-      setIsAuthenticated(false)
-    } finally {
-      setAuthLoading(false)
-    }
-  }
+export function useRegister() {
+  const queryClient = useQueryClient();
 
-  return {
-    user,
-    isAuthenticated,
-    authLoading,
-    refreshUser: getMe,
-  }
+  return useMutation({
+    mutationFn: userApi.register,
+    onSuccess: (data) => {
+      queryClient.setQueryData(authKeys.currentUser, data);
+    },
+  });
+}
+
+export function useLogout() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: userApi.logout,
+    onSuccess: () => {
+      queryClient.clear();
+    },
+  });
 }

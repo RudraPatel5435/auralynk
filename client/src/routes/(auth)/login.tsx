@@ -1,5 +1,5 @@
 import { Loader2, SunIcon as Sunburst } from "lucide-react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useForm } from "@tanstack/react-form";
 import {
   Card,
@@ -10,8 +10,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useAuthStore } from "@/store/useAuthStore";
-import { useAuthActions } from "@/hooks/useAuthActions";
+import { useLogin } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 interface User {
   email: string;
@@ -24,8 +24,8 @@ export const Route = createFileRoute('/(auth)/login')({
 
 function RouteComponent() {
 
-  const { authLoading } = useAuthStore()
-  const { login } = useAuthActions()
+  const { mutateAsync, isPending } = useLogin()
+  const navigate = useNavigate();
 
   const defaultUser: User = {
     email: "",
@@ -34,7 +34,17 @@ function RouteComponent() {
   const form = useForm({
     defaultValues: defaultUser,
     onSubmit: async ({ value }) => {
-      login(value.email, value.password)
+      try {
+        await mutateAsync({
+          email: value.email,
+          password: value.password,
+        });
+        navigate({ to: "/channels/@dev" })
+      } catch (err) {
+        console.error('Login failed:', err);
+        toast.error("Invalid email or password");
+      } finally {
+      }
     },
   });
 
@@ -107,9 +117,9 @@ function RouteComponent() {
               )}
             />
 
-            <Button type="submit" disabled={authLoading} className={`w-full mt-4 cursor-pointer`}>
+            <Button type="submit" disabled={isPending} className={`w-full mt-4 cursor-pointer`}>
               {
-                authLoading ?
+                isPending ?
                   <div className="flex items-center gap-2">
                     <Loader2 className="animate-spin" />
                     <span>Loggin you in...</span>

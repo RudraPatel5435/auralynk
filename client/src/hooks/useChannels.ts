@@ -58,32 +58,6 @@ export const useChannels = (channelId?: string) => {
     enabled: !!channelId,
   })
 
-  // const fetchChannelById = async (id: string): Promise<Channel> => {
-  //   const res = await fetch(`${API_URL}/channels/${id}`, {
-  //     credentials: "include",
-  //     method: "GET",
-  //   })
-  //   if (!res.ok) throw new Error("Failed to load channel")
-  //   const data = await res.json()
-  //   return data
-  // }
-  //
-  // const {
-  //   data: channel,
-  //   isLoading: channelLoading,
-  // } = useQuery<Channel>({
-  //   queryKey: ["channel", undefined], // placeholder, updated manually
-  //   queryFn: () => Promise.resolve(undefined as never),
-  //   enabled: false,
-  // })
-  //
-  // const fetchChannel = async (id: string) => {
-  //   return queryClient.fetchQuery({
-  //     queryKey: ["channel", id],
-  //     queryFn: () => fetchChannelById(id),
-  //   })
-  // }
-
   const joinMutation = useMutation({
     mutationFn: async (channelId: string) => {
       const res = await fetch(`${API_URL}/channels/${channelId}/join`, {
@@ -156,3 +130,90 @@ export const useChannels = (channelId?: string) => {
     createChannel: createMutation.mutateAsync,
   }
 }
+
+// import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+// import { channelApi } from '@/lib/api';
+//
+// export const channelKeys = {
+//   all: ['channels'] as const,
+//   lists: () => [...channelKeys.all, 'list'] as const,
+//   list: (filters?: Record<string, unknown>) => [...channelKeys.lists(), filters] as const,
+//   details: () => [...channelKeys.all, 'detail'] as const,
+//   detail: (id: string) => [...channelKeys.details(), id] as const,
+// };
+//
+// export function useChannels() {
+//   return useQuery({
+//     queryKey: channelKeys.lists(),
+//     queryFn: channelApi.getChannels,
+//     staleTime: 1000 * 60 * 5,
+//   });
+// }
+//
+// export function useChannel(id: string) {
+//   return useQuery({
+//     queryKey: channelKeys.detail(id),
+//     queryFn: () => channelApi.getChannel(id),
+//     enabled: !!id,
+//     staleTime: 1000 * 60 * 5,
+//   });
+// }
+//
+// export function useCreateChannel() {
+//   const queryClient = useQueryClient();
+//   
+//   return useMutation({
+//     mutationFn: channelApi.createChannel,
+//     onSuccess: () => {
+//       queryClient.invalidateQueries({ queryKey: channelKeys.lists() });
+//     },
+//   });
+// }
+//
+// export function useUpdateChannel() {
+//   const queryClient = useQueryClient();
+//   
+//   return useMutation({
+//     mutationFn: ({ id, ...data }: { id: string; name?: string; access_type?: 'public' | 'private' }) =>
+//       channelApi.updateChannel(id, data),
+//     onSuccess: (data, variables) => {
+//       queryClient.invalidateQueries({ queryKey: channelKeys.lists() });
+//       queryClient.invalidateQueries({ queryKey: channelKeys.detail(variables.id) });
+//     },
+//   });
+// }
+//
+// export function useDeleteChannel() {
+//   const queryClient = useQueryClient();
+//   
+//   return useMutation({
+//     mutationFn: channelApi.deleteChannel,
+//     onSuccess: () => {
+//       queryClient.invalidateQueries({ queryKey: channelKeys.lists() });
+//     },
+//   });
+// }
+//
+// export function useJoinChannel() {
+//   const queryClient = useQueryClient();
+//   
+//   return useMutation({
+//     mutationFn: channelApi.joinChannel,
+//     onSuccess: (data, channelId) => {
+//       queryClient.invalidateQueries({ queryKey: channelKeys.lists() });
+//       queryClient.invalidateQueries({ queryKey: channelKeys.detail(channelId) });
+//     },
+//   });
+// }
+//
+// export function useLeaveChannel() {
+//   const queryClient = useQueryClient();
+//   
+//   return useMutation({
+//     mutationFn: channelApi.leaveChannel,
+//     onSuccess: (data, channelId) => {
+//       queryClient.invalidateQueries({ queryKey: channelKeys.lists() });
+//       queryClient.invalidateQueries({ queryKey: channelKeys.detail(channelId) });
+//     },
+//   });
+// }

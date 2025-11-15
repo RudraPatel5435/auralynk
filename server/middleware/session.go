@@ -49,7 +49,7 @@ func SessionAuth() gin.HandlerFunc {
 			return
 		}
 
-		uid, err := uuid.Parse(userID.(string))
+		uuid, err := uuid.Parse(userID.(string))
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"error": "Invalid session",
@@ -59,7 +59,7 @@ func SessionAuth() gin.HandlerFunc {
 		}
 
 		var user models.User
-		if err := database.DB.First(&user, "id = ?", uid).Error; err != nil {
+		if err := database.DB.First(&user, "id = ?", uuid).Error; err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"error": "User not found",
 			})

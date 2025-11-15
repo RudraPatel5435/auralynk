@@ -4,7 +4,7 @@
 
 [] Auralynk (name, channels) -> Vyenet (name, devspace)
 [] sub spcace in spaces for chatting, voice chat and video chat
-[] chatting func with previous loading when loading back
+[] chatting func with previous chat when loading back
 [] when creating private devspace, provide a code for other to join
 [] Exalidraw Integration
 [] cache implementation
@@ -14,5 +14,5 @@
 [-] join space func
 
 Pages
-[] 404
+[-] 404
 [] landing Page

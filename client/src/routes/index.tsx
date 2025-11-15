@@ -1,17 +1,16 @@
 import { Button } from '@/components/ui/button'
-import { useAuth } from '@/hooks/useAuth'
-import { useAuthActions } from '@/hooks/useAuthActions'
+import { useCurrentUser, useLogout } from '@/hooks/useAuth'
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/')({ component: App })
 
 function App() {
-  const { user } = useAuth()
-  const { logout } = useAuthActions()
+  const { data: user } = useCurrentUser()
+  const logout = useLogout()
   return (
     <div>
       Hello
-      <Button variant='destructive' onClick={logout}>
+      <Button variant='destructive' onClick={() => logout.mutateAsync()}>
         Logout
       </Button>
       {user &&

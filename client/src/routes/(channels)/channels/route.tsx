@@ -1,15 +1,15 @@
-import { createFileRoute, Link, Outlet } from '@tanstack/react-router'
+import { createFileRoute, Link, Outlet, useNavigate } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Input } from '@/components/ui/input'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { useChannels } from '@/hooks/useChannels'
-import { useAuth } from '@/hooks/useAuth'
-import { useAuthActions } from '@/hooks/useAuthActions'
+import { useCurrentUser, useLogout } from '@/hooks/useAuth'
 import { useState } from 'react'
 import { Hash, Users, Search, Settings, LogOut, Mic, MicOff, Video, VideoOff, Headphones, Volume2, ChevronDown, Loader2 } from 'lucide-react'
 import CreateChannel from '@/components/channelActions/CreateChannel'
 import JoinChannel from '@/components/dev/join-channel'
+import { toast } from 'sonner'
 
 export const Route = createFileRoute('/(channels)/channels')({
   component: RouteComponent,
@@ -17,14 +17,26 @@ export const Route = createFileRoute('/(channels)/channels')({
 
 function RouteComponent() {
   const { channels, channelsLoading } = useChannels()
-  const { user } = useAuth()
-  const { logout } = useAuthActions()
+  const { data: user } = useCurrentUser()
+  const { mutateAsync } = useLogout()
+
+  const navigate = useNavigate()
+
   const [showFriends, setShowFriends] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [micEnabled, setMicEnabled] = useState(true)
   const [videoEnabled, setVideoEnabled] = useState(false)
   const [audioEnabled, setAudioEnabled] = useState(true)
 
+  const handleLogout = async () => {
+    try {
+      await mutateAsync();
+      navigate({ to: '/login' })
+    } catch (err) {
+      console.error("Failed to logout:", err)
+      toast.error("Logout failed")
+    }
+  };
 
   const userChannels = channels.filter(ch => ch.is_member && ch.is_admin)
   const joinedChannels = channels.filter(ch => ch.is_member && !ch.is_admin)
@@ -131,7 +143,7 @@ function RouteComponent() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
-                {user?.username[0]?.toUpperCase()}
+                {user?.username?.[0]?.toUpperCase() ?? ""}
               </div>
               <div>
                 <p className="text-sm font-medium">{user?.username}</p>
@@ -150,7 +162,7 @@ function RouteComponent() {
                   <Settings className="mr-2 h-4 w-4" /> Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout} className="text-destructive">
+                <DropdownMenuItem onClick={handleLogout} className="text-destructive">
                   <LogOut className="mr-2 h-4 w-4" /> Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
