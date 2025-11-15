@@ -10,33 +10,100 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as authRegisterRouteImport } from './routes/(auth)/register'
+import { Route as authLoginRouteImport } from './routes/(auth)/login'
+import { Route as channelsChannelsRouteRouteImport } from './routes/(channels)/channels/route'
+import { Route as channelsChannelsAtdevRouteImport } from './routes/(channels)/channels/@dev'
+import { Route as channelsChannelsIdRouteImport } from './routes/(channels)/channels/$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const authRegisterRoute = authRegisterRouteImport.update({
+  id: '/(auth)/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const authLoginRoute = authLoginRouteImport.update({
+  id: '/(auth)/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const channelsChannelsRouteRoute = channelsChannelsRouteRouteImport.update({
+  id: '/(channels)/channels',
+  path: '/channels',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const channelsChannelsAtdevRoute = channelsChannelsAtdevRouteImport.update({
+  id: '/@dev',
+  path: '/@dev',
+  getParentRoute: () => channelsChannelsRouteRoute,
+} as any)
+const channelsChannelsIdRoute = channelsChannelsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => channelsChannelsRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/channels': typeof channelsChannelsRouteRouteWithChildren
+  '/login': typeof authLoginRoute
+  '/register': typeof authRegisterRoute
+  '/channels/$id': typeof channelsChannelsIdRoute
+  '/channels/@dev': typeof channelsChannelsAtdevRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/channels': typeof channelsChannelsRouteRouteWithChildren
+  '/login': typeof authLoginRoute
+  '/register': typeof authRegisterRoute
+  '/channels/$id': typeof channelsChannelsIdRoute
+  '/channels/@dev': typeof channelsChannelsAtdevRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/(channels)/channels': typeof channelsChannelsRouteRouteWithChildren
+  '/(auth)/login': typeof authLoginRoute
+  '/(auth)/register': typeof authRegisterRoute
+  '/(channels)/channels/$id': typeof channelsChannelsIdRoute
+  '/(channels)/channels/@dev': typeof channelsChannelsAtdevRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/channels'
+    | '/login'
+    | '/register'
+    | '/channels/$id'
+    | '/channels/@dev'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/channels'
+    | '/login'
+    | '/register'
+    | '/channels/$id'
+    | '/channels/@dev'
+  id:
+    | '__root__'
+    | '/'
+    | '/(channels)/channels'
+    | '/(auth)/login'
+    | '/(auth)/register'
+    | '/(channels)/channels/$id'
+    | '/(channels)/channels/@dev'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  channelsChannelsRouteRoute: typeof channelsChannelsRouteRouteWithChildren
+  authLoginRoute: typeof authLoginRoute
+  authRegisterRoute: typeof authRegisterRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +115,64 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/(auth)/register': {
+      id: '/(auth)/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof authRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(auth)/login': {
+      id: '/(auth)/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof authLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(channels)/channels': {
+      id: '/(channels)/channels'
+      path: '/channels'
+      fullPath: '/channels'
+      preLoaderRoute: typeof channelsChannelsRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(channels)/channels/@dev': {
+      id: '/(channels)/channels/@dev'
+      path: '/@dev'
+      fullPath: '/channels/@dev'
+      preLoaderRoute: typeof channelsChannelsAtdevRouteImport
+      parentRoute: typeof channelsChannelsRouteRoute
+    }
+    '/(channels)/channels/$id': {
+      id: '/(channels)/channels/$id'
+      path: '/$id'
+      fullPath: '/channels/$id'
+      preLoaderRoute: typeof channelsChannelsIdRouteImport
+      parentRoute: typeof channelsChannelsRouteRoute
+    }
   }
 }
 
+interface channelsChannelsRouteRouteChildren {
+  channelsChannelsIdRoute: typeof channelsChannelsIdRoute
+  channelsChannelsAtdevRoute: typeof channelsChannelsAtdevRoute
+}
+
+const channelsChannelsRouteRouteChildren: channelsChannelsRouteRouteChildren = {
+  channelsChannelsIdRoute: channelsChannelsIdRoute,
+  channelsChannelsAtdevRoute: channelsChannelsAtdevRoute,
+}
+
+const channelsChannelsRouteRouteWithChildren =
+  channelsChannelsRouteRoute._addFileChildren(
+    channelsChannelsRouteRouteChildren,
+  )
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  channelsChannelsRouteRoute: channelsChannelsRouteRouteWithChildren,
+  authLoginRoute: authLoginRoute,
+  authRegisterRoute: authRegisterRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

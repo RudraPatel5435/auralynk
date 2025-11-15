@@ -48,6 +48,10 @@ func CreateChannel(c *gin.Context) {
 		return
 	}
 
+	if err := database.DB.Model(&user).Association("OwnedChannels").Append(channel); err != nil {
+		utils.ErrorResponse(c, 500, "Failed to associate user to channel")
+	}
+
 	utils.SuccessResponse(c, 201, "Channel created successfully", gin.H{
 		"id":          channel.ID,
 		"name":        channel.Name,
@@ -64,14 +68,20 @@ func GetChannels(c *gin.Context) {
 		return
 	}
 
+	var channelIDs []uuid.UUID
+
+	database.DB.Table("channels").
+		Select("DISTINCT channels.id").
+		Joins("LEFT JOIN channel_members ON channel_members.channel_id = channels.id").
+		Where("channels.access_type = ? OR channel_members.user_id = ?", "public", user.ID).
+		Pluck("id", &channelIDs)
+
 	var channels []models.Channel
 
 	err := database.DB.
-		Distinct("channels.id").
 		Preload("Admin").
 		Preload("Members").
-		Joins("LEFT JOIN channel_members ON channel_members.channel_id = channels.id").
-		Where("channels.access_type = ? OR channel_members.user_id = ?", "public", user.ID).
+		Where("id IN ?", channelIDs).
 		Find(&channels).Error
 
 	if err != nil {
@@ -82,22 +92,29 @@ func GetChannels(c *gin.Context) {
 	var response []gin.H
 	for _, channel := range channels {
 		isMember := false
+
+		var members []gin.H
 		for _, member := range channel.Members {
 			if member.ID == user.ID {
 				isMember = true
-				break
 			}
+			members = append(members, gin.H{
+				"id":       member.ID,
+				"username": member.Username,
+			})
 		}
 
 		response = append(response, gin.H{
-			"id":           channel.ID,
-			"name":         channel.Name,
-			"access_type":  channel.AccessType,
-			"admin_id":     channel.AdminID,
-			"is_member":    isMember,
-			"is_admin":     channel.AdminID == user.ID,
-			"member_count": len(channel.Members),
-			"created_at":   channel.CreatedAt,
+			"id":             channel.ID,
+			"name":           channel.Name,
+			"access_type":    channel.AccessType,
+			"admin_username": channel.Admin.Username,
+			"admin_id":       channel.AdminID,
+			"is_member":      isMember,
+			"is_admin":       channel.AdminID == user.ID,
+			"member_count":   len(channel.Members),
+			"members":        members,
+			"created_at":     channel.CreatedAt,
 		})
 	}
 
@@ -203,7 +220,7 @@ func UpdateChannel(c *gin.Context) {
 		return
 	}
 
-	updates := make(map[string]interface{})
+	updates := make(map[string]any)
 
 	if input.Name != nil {
 		if err := utils.ValidateChannelName(*input.Name); err != nil {

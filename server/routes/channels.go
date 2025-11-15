@@ -8,7 +8,7 @@ import (
 func RegisterChannelRoutes(rg *gin.RouterGroup) {
 	channels := rg.Group("/channels")
 	{
-		channels.POST("", handlers.CreateChannel)
+		channels.POST("/create", handlers.CreateChannel)
 		channels.GET("", handlers.GetChannels)
 		channels.GET("/:id", handlers.GetChannel)
 		channels.PATCH("/:id", handlers.UpdateChannel)
