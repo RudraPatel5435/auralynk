@@ -2,6 +2,7 @@ import { useChannels } from '@/hooks/useChannels'
 import { createFileRoute } from '@tanstack/react-router'
 import { Hash } from 'lucide-react'
 import { Skeleton } from "@/components/ui/skeleton"
+import { ChatInterface } from '@/components/chat/ChatInterface'
 
 export const Route = createFileRoute('/(channels)/channels/$id')({
   component: RouteComponent,
@@ -12,7 +13,7 @@ function RouteComponent() {
   const { channel, channelLoading } = useChannels(id)
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col h-full">
       {/* Header */}
       <div className="h-12 px-4 flex items-center border-b border-border bg-secondary">
         {channelLoading ? (
@@ -25,34 +26,29 @@ function RouteComponent() {
             <>
               <Hash className="h-5 w-5 text-muted-foreground mr-2" />
               <span className="font-semibold">{channel.name}</span>
+              <span className="mx-3 text-muted-foreground">•</span>
+              <span className="text-sm text-muted-foreground">
+                {channel.member_count} {channel.member_count === 1 ? 'member' : 'members'}
+              </span>
             </>
           )
         )}
       </div>
 
-      {/* Page Content */}
-      <div className="flex-1 overflow-y-auto p-4">
-        {channelLoading ? (
-          <div className="py-10 space-y-4 flex flex-col items-center">
-            <Skeleton className="h-16 w-16 rounded-md" />
-            <Skeleton className="h-6 w-48" />
-            <Skeleton className="h-4 w-64" />
-            <Skeleton className="h-4 w-52" />
-          </div>
-        ) : channel ? (
-          <div className="py-8 text-center text-muted-foreground">
-            <Hash className="h-16 w-16 mx-auto mb-4 text-[hsl(var(--color-border))]" />
-            <h3 className="text-xl font-semibold mb-2 text-[hsl(var(--color-text))]">
-              Welcome to #{channel.name}
-            </h3>
-            <p className="text-sm">This is the beginning of the channel.</p>
-          </div>
-        ) : (
-          <div className="py-8 text-center text-muted-foreground">
-            <p>Select a channel to get started</p>
-          </div>
-        )}
-      </div>
+      {/* Chat Interface */}
+      {channelLoading ? (
+        <div className="flex-1 p-4 space-y-4">
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
+        </div>
+      ) : channel ? (
+        <ChatInterface channelId={channel.id} channelName={channel.name} />
+      ) : (
+        <div className="flex-1 flex items-center justify-center text-muted-foreground">
+          <p>Channel not found</p>
+        </div>
+      )}
     </div>
   )
 }
