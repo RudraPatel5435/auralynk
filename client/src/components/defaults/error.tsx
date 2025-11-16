@@ -5,7 +5,7 @@ export default function ErrorComponent() {
     <div className="h-screen w-full flex flex-col items-center justify-center gap-4 text-center">
       <h1 className="text-4xl font-bold">Some Error Occured</h1>
       <p className="text-muted-foreground max-w-md">
-        Error occured while doing something
+        Reload the page or try again after some time
       </p>
 
       <Link
