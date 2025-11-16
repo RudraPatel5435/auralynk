@@ -44,6 +44,9 @@ func SetupRouter() *gin.Engine {
 		RegisterWebSocketRoutes(ws)
 	}
 
+	// Register WebRTC routes
+	RegisterWebRTCRoutes(protected, ws)
+
 	// Remove in production
 	if gin.Mode() == gin.DebugMode {
 		r.GET("/debug/users", func(c *gin.Context) {
