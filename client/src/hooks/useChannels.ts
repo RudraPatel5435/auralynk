@@ -3,7 +3,7 @@ import { toast } from "sonner"
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api"
 
-interface Members {
+export interface Members {
   id: string
   username: string
 }
@@ -12,12 +12,11 @@ export interface Channel {
   id: string
   name: string
   access_type: string
-  admin_id: string
-  admin_username: string
+  admin: Members
   is_member: boolean
   is_admin: boolean
   member_count: number
-  members: Members
+  members: Members[]
   created_at: string
 }
 
@@ -45,7 +44,7 @@ export const useChannels = (channelId?: string) => {
     data: channel,
     isLoading: channelLoading,
   } = useQuery<Channel>({
-    queryKey: [`channel-${channelId}`, channelId],
+    queryKey: ["channel", channelId],
     queryFn: async () => {
       const res = await fetch(`${API_URL}/channels/${channelId}`, {
         method: "GET",
@@ -87,7 +86,6 @@ export const useChannels = (channelId?: string) => {
     },
     onSuccess: (data) => {
       toast.success("Left the channel")
-
       queryClient.invalidateQueries({ queryKey: ["channels"] })
       queryClient.invalidateQueries({ queryKey: ["channel", data.id] })
     },
@@ -112,7 +110,6 @@ export const useChannels = (channelId?: string) => {
     onError: (err: any) => toast.error(err.message),
   })
 
-
   return {
     channels,
     channel,
@@ -130,90 +127,3 @@ export const useChannels = (channelId?: string) => {
     createChannel: createMutation.mutateAsync,
   }
 }
-
-// import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-// import { channelApi } from '@/lib/api';
-//
-// export const channelKeys = {
-//   all: ['channels'] as const,
-//   lists: () => [...channelKeys.all, 'list'] as const,
-//   list: (filters?: Record<string, unknown>) => [...channelKeys.lists(), filters] as const,
-//   details: () => [...channelKeys.all, 'detail'] as const,
-//   detail: (id: string) => [...channelKeys.details(), id] as const,
-// };
-//
-// export function useChannels() {
-//   return useQuery({
-//     queryKey: channelKeys.lists(),
-//     queryFn: channelApi.getChannels,
-//     staleTime: 1000 * 60 * 5,
-//   });
-// }
-//
-// export function useChannel(id: string) {
-//   return useQuery({
-//     queryKey: channelKeys.detail(id),
-//     queryFn: () => channelApi.getChannel(id),
-//     enabled: !!id,
-//     staleTime: 1000 * 60 * 5,
-//   });
-// }
-//
-// export function useCreateChannel() {
-//   const queryClient = useQueryClient();
-//   
-//   return useMutation({
-//     mutationFn: channelApi.createChannel,
-//     onSuccess: () => {
-//       queryClient.invalidateQueries({ queryKey: channelKeys.lists() });
-//     },
-//   });
-// }
-//
-// export function useUpdateChannel() {
-//   const queryClient = useQueryClient();
-//   
-//   return useMutation({
-//     mutationFn: ({ id, ...data }: { id: string; name?: string; access_type?: 'public' | 'private' }) =>
-//       channelApi.updateChannel(id, data),
-//     onSuccess: (data, variables) => {
-//       queryClient.invalidateQueries({ queryKey: channelKeys.lists() });
-//       queryClient.invalidateQueries({ queryKey: channelKeys.detail(variables.id) });
-//     },
-//   });
-// }
-//
-// export function useDeleteChannel() {
-//   const queryClient = useQueryClient();
-//   
-//   return useMutation({
-//     mutationFn: channelApi.deleteChannel,
-//     onSuccess: () => {
-//       queryClient.invalidateQueries({ queryKey: channelKeys.lists() });
-//     },
-//   });
-// }
-//
-// export function useJoinChannel() {
-//   const queryClient = useQueryClient();
-//   
-//   return useMutation({
-//     mutationFn: channelApi.joinChannel,
-//     onSuccess: (data, channelId) => {
-//       queryClient.invalidateQueries({ queryKey: channelKeys.lists() });
-//       queryClient.invalidateQueries({ queryKey: channelKeys.detail(channelId) });
-//     },
-//   });
-// }
-//
-// export function useLeaveChannel() {
-//   const queryClient = useQueryClient();
-//   
-//   return useMutation({
-//     mutationFn: channelApi.leaveChannel,
-//     onSuccess: (data, channelId) => {
-//       queryClient.invalidateQueries({ queryKey: channelKeys.lists() });
-//       queryClient.invalidateQueries({ queryKey: channelKeys.detail(channelId) });
-//     },
-//   });
-// }
