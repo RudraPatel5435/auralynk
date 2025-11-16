@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Hash, Users, X } from 'lucide-react'
 import { Skeleton } from "@/components/ui/skeleton"
 import { ChatInterface } from '@/components/chat/ChatInterface'
+import { VoiceVideoPanel } from '@/components/chat/VoiceVideoPanel'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
 
@@ -14,14 +15,13 @@ function RouteComponent() {
   const { id } = Route.useParams()
   const { channel, channelLoading } = useChannels(id)
   const [showMembers, setShowMembers] = useState(false)
-  console.log(channel)
 
   const members = channel?.members ?? []
 
   return (
     <div className="flex-1 flex h-full">
-      <div className="flex-1 flex flex-col min-w-0">
 
+      <div className="flex-1 flex flex-col min-w-0">
         <div className="h-12 px-4 flex items-center border-b border-border bg-secondary">
           {channelLoading ? (
             <div className="flex items-center space-x-2">
@@ -34,7 +34,6 @@ function RouteComponent() {
                 <Hash className="h-5 w-5 text-muted-foreground mr-2" />
                 <span className="font-semibold">{channel.name}</span>
               </div>
-
 
               <Button
                 variant='outline'
@@ -58,7 +57,12 @@ function RouteComponent() {
             <Skeleton className="h-16 w-full" />
           </div>
         ) : channel ? (
-          <ChatInterface channelId={channel.id} channelName={channel.name} />
+          <div className='flex-1 flex'>
+            {channel && (
+              <VoiceVideoPanel channelId={channel.id} channelName={channel.name} />
+            )}
+            <ChatInterface channelId={channel.id} channelName={channel.name} />
+          </div>
         ) : (
           <div className="flex-1 flex items-center justify-center text-muted-foreground">
             <p>Channel not found</p>

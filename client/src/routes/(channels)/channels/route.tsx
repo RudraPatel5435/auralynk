@@ -6,7 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { useChannels } from '@/hooks/useChannels'
 import { useCurrentUser, useLogout } from '@/hooks/useAuth'
 import { useState } from 'react'
-import { Hash, Users, Search, Settings, LogOut, Mic, MicOff, Video, VideoOff, Headphones, Volume2, ChevronDown, Loader2 } from 'lucide-react'
+import { Hash, Users, Search, Settings, LogOut, ChevronDown, Loader2 } from 'lucide-react'
 import CreateChannel from '@/components/channelActions/CreateChannel'
 import JoinChannel from '@/components/dev/join-channel'
 
@@ -21,9 +21,6 @@ function RouteComponent() {
 
   const [showFriends, setShowFriends] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [micEnabled, setMicEnabled] = useState(true)
-  const [videoEnabled, setVideoEnabled] = useState(false)
-  const [audioEnabled, setAudioEnabled] = useState(true)
 
   const userChannels = channels.filter(ch => ch.is_member && ch.is_admin)
   const joinedChannels = channels.filter(ch => ch.is_member && !ch.is_admin)
@@ -49,7 +46,7 @@ function RouteComponent() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
               <DropdownMenuItem onClick={() => setShowFriends(false)}>
-                <Hash className="mr-2 h-4 w-4" /> Channels
+                <Hash className="mr-2 h-4 w-4" /> DevSpaces
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShowFriends(true)}>
                 <Users className="mr-2 h-4 w-4" /> Friends & DMs
@@ -171,17 +168,6 @@ function RouteComponent() {
             </DropdownMenu>
           </div>
 
-          <div className="flex gap-1">
-            <Button variant="secondary" size="sm" className="flex-1" onClick={() => setMicEnabled(!micEnabled)}>
-              {micEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4 text-destructive" />}
-            </Button>
-            <Button variant="secondary" size="sm" className="flex-1" onClick={() => setVideoEnabled(!videoEnabled)}>
-              {videoEnabled ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4 text-destructive" />}
-            </Button>
-            <Button variant="secondary" size="sm" className="flex-1" onClick={() => setAudioEnabled(!audioEnabled)}>
-              {audioEnabled ? <Headphones className="h-4 w-4" /> : <Volume2 className="h-4 w-4 text-destructive" />}
-            </Button>
-          </div>
         </div>
       </aside>
 

@@ -9,12 +9,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/RudraPatel5435/auralynk/server/database"
-	"github.com/RudraPatel5435/auralynk/server/handlers"
+	"github.com/RudraPatel5435/vyenet/server/database"
+	"github.com/RudraPatel5435/vyenet/server/handlers"
+	// "github.com/RudraPatel5435/vyenet/server/models"
+	"github.com/RudraPatel5435/vyenet/server/routes"
 	"github.com/joho/godotenv"
-
-	// "github.com/RudraPatel5435/auralynk/server/models"
-	"github.com/RudraPatel5435/auralynk/server/routes"
 )
 
 func main() {
@@ -24,10 +23,12 @@ func main() {
 	}
 
 	database.ConnectDB()
-	// database.DB.Migrator().DropTable(&models.User{}, &models.Message{}, &models.Channel{}, "user_owned_channels", "channel_members")
-	// database.DB.AutoMigrate(&models.User{}, &models.Message{}, &models.Channel{})
+
+	// database.DB.Migrator().DropTable(&models.User{}, &models.Message{}, &models.Channel{}, &models.MediaSession{}, "user_owned_channels", "channel_members")
+	// database.DB.AutoMigrate(&models.User{}, &models.Message{}, &models.Channel{}, &models.MediaSession{})
 
 	handlers.StartHub()
+	handlers.StartRTCHub()
 
 	r := routes.SetupRouter()
 

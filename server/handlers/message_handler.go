@@ -4,10 +4,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/RudraPatel5435/auralynk/server/database"
-	"github.com/RudraPatel5435/auralynk/server/middleware"
-	"github.com/RudraPatel5435/auralynk/server/models"
-	"github.com/RudraPatel5435/auralynk/server/utils"
+	"github.com/RudraPatel5435/vyenet/server/database"
+	"github.com/RudraPatel5435/vyenet/server/middleware"
+	"github.com/RudraPatel5435/vyenet/server/models"
+	"github.com/RudraPatel5435/vyenet/server/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )

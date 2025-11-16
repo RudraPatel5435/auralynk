@@ -10,8 +10,8 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"github.com/RudraPatel5435/auralynk/server/database"
-	"github.com/RudraPatel5435/auralynk/server/models"
+	"github.com/RudraPatel5435/vyenet/server/database"
+	"github.com/RudraPatel5435/vyenet/server/models"
 )
 
 func InitSessionStore(db *gorm.DB) (sessions.Store, error) {
