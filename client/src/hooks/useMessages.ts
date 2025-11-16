@@ -18,7 +18,7 @@ interface MessagesResponse {
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
 
-// Fetcher (fully typed)
+// Fetch last N messages for a channel (newest last)
 const fetchMessages = async (channelId: string): Promise<Message[]> => {
   const res = await fetch(
     `${API_URL}/channels/${channelId}/messages?limit=50`,
@@ -30,14 +30,12 @@ const fetchMessages = async (channelId: string): Promise<Message[]> => {
   }
 
   const json: MessagesResponse = await res.json()
-  return [...json.data.messages].reverse() // newest last
+  return [...json.data.messages].reverse()
 }
 
-// Main Hook
 export const useMessages = (channelId: string) => {
   const queryClient = useQueryClient()
 
-  // Query messages
   const {
     data: messages = [],
     isLoading,
@@ -48,9 +46,9 @@ export const useMessages = (channelId: string) => {
     queryFn: () => fetchMessages(channelId),
     staleTime: 30_000,
     refetchOnWindowFocus: true,
+    enabled: Boolean(channelId),
   })
 
-  // Optimistically add a single message
   const addMessage = (message: Message) => {
     queryClient.setQueryData<Message[]>(
       ['messages', channelId],
@@ -61,22 +59,34 @@ export const useMessages = (channelId: string) => {
     )
   }
 
-  // Add a batch of messages (WS support)
+  const addMessageFromWS = (wsPayload: {
+    message_id: string
+    content?: string
+    timestamp: string
+    user: { id: string; username: string }
+  }) => {
+    const msg: Message = {
+      id: wsPayload.message_id,
+      content: wsPayload.content ?? '',
+      created_at: wsPayload.timestamp,
+      user: wsPayload.user,
+    }
+
+    addMessage(msg)
+  }
+
   const addMessages = (incoming: Message[]) => {
     queryClient.setQueryData<Message[]>(
       ['messages', channelId],
       (old = []) => {
         const existing = new Set(old.map(m => m.id))
         const filtered = incoming.filter(m => !existing.has(m.id))
-
-        if (filtered.length === 0) return old // no re-render
-
+        if (filtered.length === 0) return old
         return [...old, ...filtered]
       }
     )
   }
 
-  // Force re-fetch
   const invalidateMessages = () => {
     queryClient.invalidateQueries({ queryKey: ['messages', channelId] })
   }
@@ -88,6 +98,7 @@ export const useMessages = (channelId: string) => {
     refetch,
     addMessage,
     addMessages,
+    addMessageFromWS,
     invalidateMessages,
   }
 }
