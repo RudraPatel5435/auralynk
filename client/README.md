@@ -2,16 +2,16 @@
 
 ## TODO
 
-[] use tanstack queries for messages
-[] when joining a channel, user joins it 3 times
 [] Auralynk (name, channels) -> Vyenet (name, devspace)
 [] sub spcace in spaces for chatting, voice chat and video chat
-[] view members in the space
 [] user presenece (Last online)
 [] ability to change name of devspace
 [] ability to change acces_type of devspace
 [] Exalidraw Integration
 [] webrtc integration
+[-] view members in the space
+[-] use tanstack queries for messages
+[-] when joining a channel, user joins it 3 times
 [-] chatting func with previous chat when loading back
 [-] cache implementation
 [-] chat/ws integration
