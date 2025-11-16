@@ -3,8 +3,79 @@ import { Mic, MicOff, Video, VideoOff, Monitor, MonitorOff, Phone, PhoneOff, Max
 import { Button } from '@/components/ui/button'
 import { useWebRTC } from '@/hooks/useWebRTC'
 import { useCurrentUser } from '@/hooks/useAuth'
-import { WebRTCDebug } from '@/components/chat/WebRTCDebug'
-import { cn } from '@/lib/utils'
+
+// Inline Debug Panel Component
+interface Peer {
+  userId: string
+  username: string
+  connection: RTCPeerConnection
+  stream?: MediaStream
+}
+
+interface WebRTCDebugPanelProps {
+  isConnected: boolean
+  peers: Peer[]
+  localStream: MediaStream | null
+  audioEnabled: boolean
+  videoEnabled: boolean
+  screenSharing: boolean
+  remoteStreamsCount: number
+}
+
+const WebRTCDebugPanel: React.FC<WebRTCDebugPanelProps> = ({
+  isConnected,
+  peers,
+  localStream,
+  audioEnabled,
+  videoEnabled,
+  screenSharing,
+  remoteStreamsCount,
+}) => {
+  const [show, setShow] = useState(true)
+
+  if (!show) {
+    return (
+      <Button
+        onClick={() => setShow(true)}
+        variant="outline"
+        size="sm"
+        className="fixed bottom-4 right-4 z-50"
+      >
+        Debug
+      </Button>
+    )
+  }
+
+  return (
+    <div className="fixed bottom-4 right-4 w-96 max-h-[600px] overflow-auto z-50 shadow-xl bg-card border rounded-lg">
+      <div className="flex items-center justify-between p-3 border-b">
+        <div className="text-sm font-medium">WebRTC Debug</div>
+        <Button onClick={() => setShow(false)} variant="ghost" size="sm">Hide</Button>
+      </div>
+      <div className="p-3 space-y-3 text-xs">
+        <div>
+          <div className="font-semibold mb-1">Status:</div>
+          <div>WS: {isConnected ? '✅' : '❌'} | Peers: {peers.length} | Streams: {remoteStreamsCount}</div>
+          <div>Audio: {audioEnabled ? '✅' : '❌'} | Video: {videoEnabled ? '✅' : '❌'} | Screen: {screenSharing ? '✅' : '❌'}</div>
+        </div>
+
+        {peers.map((peer, idx) => (
+          <div key={idx} className="border-l-2 border-primary/30 pl-2 space-y-1">
+            <div className="font-medium">{peer.username}</div>
+            <div>Conn: {peer.connection.connectionState}</div>
+            <div>ICE: {peer.connection.iceConnectionState}</div>
+            <div>Stream: {peer.stream ? `✅ (${peer.stream.getTracks().length} tracks)` : '❌ No stream'}</div>
+          </div>
+        ))}
+
+        <div className="bg-blue-50 dark:bg-blue-950 p-2 rounded">
+          <div className="font-semibold">Open Console (F12)</div>
+          <div>Look for: 🎥 "Received remote track"</div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 interface VoiceVideoPanelProps {
   channelId: string
@@ -43,22 +114,55 @@ export const VoiceVideoPanel: React.FC<VoiceVideoPanelProps> = ({ channelId, cha
       })
     },
     onRemoteStream: (userId, stream) => {
-      console.log(`Received stream from ${userId}`)
+      console.log(`Received stream from ${userId}`, stream)
       const peer = peers.find(p => p.userId === userId)
       if (peer) {
+        console.log(`Setting remote stream for ${peer.username}`)
         setRemoteStreams(prev => {
           const newStreams = new Map(prev)
           newStreams.set(userId, { stream, username: peer.username })
           return newStreams
         })
+      } else {
+        console.warn(`Peer not found for userId ${userId}`)
       }
     },
   })
 
+  // Update remote streams when peers change
+  useEffect(() => {
+    console.log('Peers updated:', peers.length)
+    setRemoteStreams(prev => {
+      const newStreams = new Map(prev)
+
+      // Add or update streams for peers that have them
+      peers.forEach(peer => {
+        if (peer.stream) {
+          console.log(`Updating stream for peer ${peer.username}`)
+          newStreams.set(peer.userId, {
+            stream: peer.stream,
+            username: peer.username
+          })
+        }
+      })
+
+      // Remove streams for peers that left
+      const currentPeerIds = new Set(peers.map(p => p.userId))
+      Array.from(newStreams.keys()).forEach(userId => {
+        if (!currentPeerIds.has(userId)) {
+          console.log(`Removing stream for disconnected peer ${userId}`)
+          newStreams.delete(userId)
+        }
+      })
+
+      return newStreams
+    })
+  }, [peers])
+
   // Update local video element when stream changes
   useEffect(() => {
     if (localVideoRef.current && localStream) {
-      console.log('Setting local stream to video element')
+      console.log('Setting local stream to video element', localStream.getTracks())
       localVideoRef.current.srcObject = localStream
     } else if (localVideoRef.current && !localStream) {
       localVideoRef.current.srcObject = null
@@ -96,8 +200,27 @@ export const VoiceVideoPanel: React.FC<VoiceVideoPanelProps> = ({ channelId, cha
   // Count total participants (including self)
   const totalParticipants = peers.length + 1
 
+  console.log('Rendering VoiceVideoPanel:', {
+    peers: peers.length,
+    remoteStreams: remoteStreams.size,
+    localStream: !!localStream,
+    videoEnabled,
+    screenSharing
+  })
+
   return (
     <div className="flex flex-col h-full border-r border-border bg-secondary/30 w-80">
+      {/* Debug Panel */}
+      <WebRTCDebugPanel
+        isConnected={isConnected}
+        peers={peers}
+        localStream={localStream}
+        audioEnabled={audioEnabled}
+        videoEnabled={videoEnabled}
+        screenSharing={screenSharing}
+        remoteStreamsCount={remoteStreams.size}
+      />
+
       {/* Header */}
       <div className="p-3 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -145,13 +268,16 @@ export const VoiceVideoPanel: React.FC<VoiceVideoPanelProps> = ({ channelId, cha
         )}
 
         {/* Remote Videos */}
-        {Array.from(remoteStreams.entries()).map(([userId, { stream, username }]) => (
-          <RemoteVideo
-            key={userId}
-            stream={stream}
-            username={username}
-          />
-        ))}
+        {Array.from(remoteStreams.entries()).map(([userId, { stream, username }]) => {
+          console.log(`Rendering RemoteVideo for ${username}`)
+          return (
+            <RemoteVideo
+              key={userId}
+              stream={stream}
+              username={username}
+            />
+          )
+        })}
 
         {/* Participants List (audio only) */}
         <div className="space-y-2">
@@ -264,13 +390,32 @@ const RemoteVideo: React.FC<RemoteVideoProps> = ({ stream, username }) => {
   const [isMuted, setIsMuted] = useState(false)
 
   useEffect(() => {
-    console.log('Setting remote stream for:', username)
-    if (videoRef.current) {
+    console.log('RemoteVideo: Setting stream for:', username, stream.getTracks())
+
+    if (videoRef.current && stream) {
       videoRef.current.srcObject = stream
+      console.log('Video element srcObject set')
     }
-    if (audioRef.current) {
+    if (audioRef.current && stream) {
       audioRef.current.srcObject = stream
+      console.log('Audio element srcObject set')
     }
+
+    // Force play after a small delay
+    const timer = setTimeout(() => {
+      if (videoRef.current) {
+        videoRef.current.play().catch(err => {
+          console.error('Failed to play video:', err)
+        })
+      }
+      if (audioRef.current) {
+        audioRef.current.play().catch(err => {
+          console.error('Failed to play audio:', err)
+        })
+      }
+    }, 100)
+
+    return () => clearTimeout(timer)
   }, [stream, username])
 
   const toggleFullscreen = () => {
@@ -294,6 +439,8 @@ const RemoteVideo: React.FC<RemoteVideoProps> = ({ stream, username }) => {
 
   const hasAudio = stream.getAudioTracks().length > 0
   const hasVideo = stream.getVideoTracks().length > 0 && stream.getVideoTracks()[0].enabled
+
+  console.log(`RemoteVideo render: ${username}, hasVideo: ${hasVideo}, hasAudio: ${hasAudio}`)
 
   return (
     <div className="relative aspect-video bg-black rounded-lg overflow-hidden group">
