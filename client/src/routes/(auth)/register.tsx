@@ -61,7 +61,7 @@ function RouteComponent() {
         <div className="md:w-1/2 bg-primary text-primary-foreground p-8 md:p-12 flex flex-col justify-center relative">
           <CardHeader className="p-0 space-y-4">
             <CardTitle className="text-3xl font-semibold leading-tight">
-              Auralynk
+              vyenet
             </CardTitle>
             <CardDescription className="text-primary-foreground/80">
               Discord for developers
@@ -78,7 +78,7 @@ function RouteComponent() {
               Get Started
             </h2>
             <p className="text-muted-foreground">
-              Welcome to Auralynk — Let's build something great.
+              Welcome to vyenet — Let's build something great.
             </p>
           </div>
 
@@ -97,7 +97,7 @@ function RouteComponent() {
                   <Input
                     id="username"
                     type="text"
-                    placeholder="auralynk"
+                    placeholder="vyenet"
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
@@ -114,7 +114,7 @@ function RouteComponent() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="hi@auralynk.com"
+                    placeholder="hi@vyenet.com"
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}

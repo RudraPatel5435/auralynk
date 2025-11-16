@@ -2,6 +2,7 @@
 
 ## TODO
 
+[] leave channel
 [] Auralynk (name, channels) -> Vyenet (name, devspace)
 [] user presenece (Last online)
 [] ability to change name of devspace

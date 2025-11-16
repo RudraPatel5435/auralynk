@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"github.com/RudraPatel5435/auralynk/server/handlers"
-	"github.com/RudraPatel5435/auralynk/server/middleware"
+	"github.com/RudraPatel5435/vyenet/server/handlers"
+	"github.com/RudraPatel5435/vyenet/server/middleware"
 	"github.com/gin-gonic/gin"
 )
 

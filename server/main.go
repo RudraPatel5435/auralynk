@@ -9,10 +9,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/RudraPatel5435/auralynk/server/database"
-	"github.com/RudraPatel5435/auralynk/server/handlers"
-	// "github.com/RudraPatel5435/auralynk/server/models"
-	"github.com/RudraPatel5435/auralynk/server/routes"
+	"github.com/RudraPatel5435/vyenet/server/database"
+	"github.com/RudraPatel5435/vyenet/server/handlers"
+	// "github.com/RudraPatel5435/vyenet/server/models"
+	"github.com/RudraPatel5435/vyenet/server/routes"
 	"github.com/joho/godotenv"
 )
 

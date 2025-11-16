@@ -46,7 +46,7 @@ function RouteComponent() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
               <DropdownMenuItem onClick={() => setShowFriends(false)}>
-                <Hash className="mr-2 h-4 w-4" /> Channels
+                <Hash className="mr-2 h-4 w-4" /> DevSpaces
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShowFriends(true)}>
                 <Users className="mr-2 h-4 w-4" /> Friends & DMs

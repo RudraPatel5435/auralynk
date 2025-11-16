@@ -109,7 +109,7 @@ const JoinChannel = () => {
                     <div className="flex items-center gap-1">
                       <ShieldCheck className="h-4 w-4 text-primary" />
                       <span>
-                        <span className="font-medium">Admin:</span> {ch.admin_username}
+                        <span className="font-medium">Admin:</span> {ch.admin.username}
                       </span>
                     </div>
 
