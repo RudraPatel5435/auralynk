@@ -78,8 +78,8 @@ export const VoiceVideoPanel: React.FC<VoiceVideoPanelProps> = ({ channelId, cha
 
   if (!isInCall) {
     return (
-      <div className="p-4 border-t border-border bg-muted/10">
-        <div className="flex items-center justify-between">
+      <div className="p-4 border-r border-border bg-muted/10">
+        <div className="flex flex-col gap-4 items-center justify-between">
           <div className="flex items-center gap-2">
             <Phone className="h-5 w-5 text-muted-foreground" />
             <span className="text-sm font-medium">Voice & Video Chat</span>
@@ -97,7 +97,7 @@ export const VoiceVideoPanel: React.FC<VoiceVideoPanelProps> = ({ channelId, cha
   const totalParticipants = peers.length + 1
 
   return (
-    <div className="flex flex-col h-full border-l border-border bg-secondary/30 w-80">
+    <div className="flex flex-col h-full border-r border-border bg-secondary/30 w-80">
       {/* Header */}
       <div className="p-3 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-2">

@@ -15,7 +15,6 @@ function RouteComponent() {
   const { id } = Route.useParams()
   const { channel, channelLoading } = useChannels(id)
   const [showMembers, setShowMembers] = useState(false)
-  const [showVoiceVideo, setShowVoiceVideo] = useState(true)
 
   const members = channel?.members ?? []
 
@@ -59,7 +58,7 @@ function RouteComponent() {
           </div>
         ) : channel ? (
           <div className='flex-1 flex'>
-            {showVoiceVideo && channel && (
+            {channel && (
               <VoiceVideoPanel channelId={channel.id} channelName={channel.name} />
             )}
             <ChatInterface channelId={channel.id} channelName={channel.name} />
