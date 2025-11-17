@@ -65,7 +65,7 @@ func (h *RTCHub) Run() {
 
 			// Send list of existing peers to the new client
 			h.Mutex.RLock()
-			var peers []map[string]any
+			peers := make([]map[string]any, 0) // Initialize as empty array instead of nil
 			for c := range h.Channels[client.ChannelID] {
 				if c != client {
 					peers = append(peers, map[string]any{
@@ -76,16 +76,19 @@ func (h *RTCHub) Run() {
 			}
 			h.Mutex.RUnlock()
 
+			log.Printf("RTC: Sending %d existing peers to %s", len(peers), client.User.Username)
+
 			peersMsg := SignalMessage{
 				Type:      "existing-peers",
 				ChannelID: client.ChannelID,
 				Payload: map[string]any{
-					"peers": peers,
+					"peers": peers, // This is now always an array, never nil
 				},
 			}
 			peerData, _ := json.Marshal(peersMsg)
 			select {
 			case client.Send <- peerData:
+				log.Printf("RTC: Successfully sent existing peers list to %s", client.User.Username)
 			default:
 				log.Printf("Failed to send existing peers to %s", client.User.Username)
 			}

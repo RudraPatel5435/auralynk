@@ -6,6 +6,10 @@ interface Peer {
   username: string
   connection: RTCPeerConnection
   stream?: MediaStream
+  makingOffer?: boolean
+  ignoreOffer?: boolean
+  isSettingRemoteAnswerPending?: boolean
+  isPolite?: boolean // Determines who backs off in glare situations
 }
 
 interface SignalMessage {
@@ -49,6 +53,8 @@ export const useWebRTC = ({
   const peersRef = useRef<Map<string, Peer>>(new Map())
   const localStreamRef = useRef<MediaStream | null>(null)
   const screenStreamRef = useRef<MediaStream | null>(null)
+  const originalVideoTrackRef = useRef<MediaStreamTrack | null>(null)
+  const myUserIdRef = useRef<string | null>(null)
 
   const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws'
 
@@ -57,23 +63,144 @@ export const useWebRTC = ({
     setPeers(Array.from(peersRef.current.values()))
   }, [])
 
+  // Replace track for all peer connections and manually trigger negotiation
+  const replaceTrackForAllPeers = useCallback(async (track: MediaStreamTrack, kind: 'audio' | 'video') => {
+    console.log(`🔄 Replacing ${kind} track for all peers`)
+
+    for (const [userId, peer] of peersRef.current.entries()) {
+      const sender = peer.connection.getSenders().find(s => s.track?.kind === kind)
+
+      if (sender) {
+        // Replace existing track
+        try {
+          await sender.replaceTrack(track)
+          console.log(`✅ Replaced ${kind} track for ${peer.username}`)
+        } catch (err) {
+          console.error(`❌ Failed to replace ${kind} track for ${peer.username}:`, err)
+        }
+      } else {
+        // No sender exists, add track and manually trigger negotiation
+        console.log(`➕ Adding new ${kind} track for ${peer.username}`)
+        try {
+          peer.connection.addTrack(track, localStreamRef.current!)
+          console.log(`✅ Track added, manually triggering negotiation`)
+
+          // Manually trigger negotiation since onnegotiationneeded may not fire
+          if (peer.connection.signalingState === 'stable') {
+            console.log(`🔄 Manually creating offer for ${peer.username}`)
+            peer.makingOffer = true
+
+            const offer = await peer.connection.createOffer()
+            await peer.connection.setLocalDescription(offer)
+
+            console.log(`📤 Current senders for ${peer.username}:`, peer.connection.getSenders().map(s => ({
+              kind: s.track?.kind,
+              enabled: s.track?.enabled,
+              id: s.track?.id
+            })))
+
+            if (wsRef.current?.readyState === WebSocket.OPEN) {
+              const message: SignalMessage = {
+                type: 'offer',
+                channel_id: channelId,
+                from: '',
+                to: userId,
+                payload: { sdp: peer.connection.localDescription },
+              }
+              wsRef.current.send(JSON.stringify(message))
+              console.log(`📤 Manually sent offer to ${peer.username}`)
+            }
+
+            peer.makingOffer = false
+          } else {
+            console.log(`⚠️ Cannot negotiate, signaling state is: ${peer.connection.signalingState}`)
+          }
+        } catch (err) {
+          console.error(`❌ Failed to add ${kind} track for ${peer.username}:`, err)
+          const peer = peersRef.current.get(userId)
+          if (peer) peer.makingOffer = false
+        }
+      }
+    }
+  }, [channelId])
+
   // Create peer connection
-  const createPeerConnection = useCallback((userId: string, username: string): RTCPeerConnection => {
-    console.log('Creating peer connection for:', username, userId)
+  const createPeerConnection = useCallback((userId: string, username: string, isPolite: boolean): RTCPeerConnection => {
+    console.log('🔧 Creating peer connection for:', username, userId, `(${isPolite ? 'POLITE' : 'IMPOLITE'})`)
     const pc = new RTCPeerConnection(RTC_CONFIG)
+
+    // Store polite flag
+    const existingPeer = peersRef.current.get(userId)
+    if (existingPeer) {
+      existingPeer.isPolite = isPolite
+    }
 
     // Add local stream tracks if available
     if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach(track => {
-        console.log('Adding local track:', track.kind)
+      const tracks = localStreamRef.current.getTracks()
+      console.log(`📹 Adding ${tracks.length} local tracks to peer connection:`, tracks.map(t => `${t.kind}:${t.enabled}`))
+      tracks.forEach(track => {
         pc.addTrack(track, localStreamRef.current!)
       })
+    } else {
+      console.log('⚠️ No local stream available when creating peer connection')
+    }
+
+    // Handle negotiation needed (fallback - we also manually trigger it)
+    pc.onnegotiationneeded = async () => {
+      const peer = peersRef.current.get(userId)
+      if (!peer) {
+        console.log('⚠️ Peer not found in negotiationneeded for:', userId)
+        return
+      }
+
+      // Prevent duplicate negotiations
+      if (peer.makingOffer) {
+        console.log('⚠️ Already making offer, skipping onnegotiationneeded')
+        return
+      }
+
+      try {
+        console.log('🔔 onnegotiationneeded fired for:', username)
+
+        // Log current tracks being sent
+        const senders = pc.getSenders()
+        console.log(`📤 Current senders for ${username}:`, senders.map(s => ({
+          kind: s.track?.kind,
+          enabled: s.track?.enabled,
+          id: s.track?.id
+        })))
+
+        peer.makingOffer = true
+        await pc.setLocalDescription()
+
+        console.log(`📋 Local description type: ${pc.localDescription?.type}`)
+        console.log(`📋 Local description has ${pc.localDescription?.sdp?.split('m=').length - 1} media sections`)
+
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+          const message: SignalMessage = {
+            type: 'offer',
+            channel_id: channelId,
+            from: '',
+            to: userId,
+            payload: { sdp: pc.localDescription },
+          }
+          wsRef.current.send(JSON.stringify(message))
+          console.log('📤 Auto-sent offer to:', username)
+        } else {
+          console.error('❌ WebSocket not open, cannot send offer')
+        }
+      } catch (err) {
+        console.error('❌ Error in negotiation:', err)
+      } finally {
+        peer.makingOffer = false
+      }
     }
 
     // Handle ICE candidates
     pc.onicecandidate = (event) => {
       if (event.candidate && wsRef.current?.readyState === WebSocket.OPEN) {
-        console.log('Sending ICE candidate to:', username)
+        console.log('🧊 Sending ICE candidate to:', username)
         const message: SignalMessage = {
           type: 'ice-candidate',
           channel_id: channelId,
@@ -87,8 +214,18 @@ export const useWebRTC = ({
 
     // Handle remote stream
     pc.ontrack = (event) => {
-      console.log('Received remote track from:', username, event.track.kind)
+      console.log('🎥 Received remote track from:', username, 'kind:', event.track.kind, 'enabled:', event.track.enabled)
       const stream = event.streams[0]
+
+      if (!stream) {
+        console.error('❌ No stream in track event from:', username)
+        return
+      }
+
+      console.log('📺 Stream details:', {
+        id: stream.id,
+        tracks: stream.getTracks().map(t => ({ kind: t.kind, id: t.id, enabled: t.enabled }))
+      })
 
       const peer = peersRef.current.get(userId)
       if (peer) {
@@ -96,14 +233,26 @@ export const useWebRTC = ({
         peersRef.current.set(userId, peer)
         updatePeersState()
         onRemoteStream?.(userId, stream)
+        console.log('✅ Stream attached to peer:', username)
+      } else {
+        console.error('❌ Peer not found when attaching stream:', username)
       }
     }
 
     pc.oniceconnectionstatechange = () => {
-      console.log(`ICE connection state for ${username}:`, pc.iceConnectionState)
+      console.log(`🧊 ICE connection state for ${username}:`, pc.iceConnectionState)
       if (pc.iceConnectionState === 'failed') {
-        console.log('ICE connection failed, restarting...')
+        console.log('❌ ICE connection failed, restarting...')
         pc.restartIce()
+      }
+    }
+
+    pc.onconnectionstatechange = () => {
+      console.log(`🔌 Connection state for ${username}:`, pc.connectionState)
+      if (pc.connectionState === 'connected') {
+        console.log('✅ Peer connection established with:', username)
+      } else if (pc.connectionState === 'failed') {
+        console.error('❌ Peer connection failed with:', username)
       }
     }
 
@@ -145,6 +294,7 @@ export const useWebRTC = ({
         to: userId,
         payload: { sdp: offer },
       }
+      console.log('📤 SENDING OFFER via WebSocket:', JSON.stringify(message).substring(0, 200))
       wsRef.current.send(JSON.stringify(message))
       console.log('Offer sent to:', userId)
     } catch (error) {
@@ -154,15 +304,16 @@ export const useWebRTC = ({
 
   // Handle incoming signals
   const handleSignal = useCallback(async (data: SignalMessage) => {
-    console.log('Received signal:', data.type, 'from:', data.from)
+    console.log('🔔 Received signal:', data.type, 'from:', data.from)
 
     switch (data.type) {
       case 'existing-peers': {
         const existingPeers = data.payload.peers as Array<{ user_id: string; username: string }>
-        console.log('Existing peers:', existingPeers)
+        console.log('👥 Existing peers in channel:', existingPeers)
 
         for (const peerInfo of existingPeers) {
           if (!peersRef.current.has(peerInfo.user_id)) {
+            console.log('➕ Creating peer connection for existing peer:', peerInfo.username)
             const pc = createPeerConnection(peerInfo.user_id, peerInfo.username)
             const peer: Peer = {
               userId: peerInfo.user_id,
@@ -176,6 +327,7 @@ export const useWebRTC = ({
         updatePeersState()
 
         // Send offers to all existing peers
+        console.log('📤 Sending offers to', existingPeers.length, 'existing peers')
         for (const peerInfo of existingPeers) {
           await sendOffer(peerInfo.user_id)
         }
@@ -184,18 +336,28 @@ export const useWebRTC = ({
 
       case 'peer-joined': {
         const { user_id, username } = data.payload
-        console.log('New peer joined:', username)
+        console.log('👤 New peer joined:', username, user_id)
 
         if (!peersRef.current.has(user_id)) {
-          const pc = createPeerConnection(user_id, username)
+          console.log('➕ Creating peer connection for new peer:', username)
+          // We were here first, so we are IMPOLITE
+          const isPolite = false
+          const pc = createPeerConnection(user_id, username, isPolite)
           const peer: Peer = {
             userId: user_id,
             username,
             connection: pc,
+            isPolite: false, // EXPLICITLY SET TO FALSE
           }
           peersRef.current.set(user_id, peer)
           updatePeersState()
           onPeerJoined?.(user_id, username)
+
+          // WE (the existing user, IMPOLITE) send an offer to the new peer
+          console.log('📤 We are IMPOLITE, sending offer to new peer:', username)
+          await sendOffer(user_id)
+        } else {
+          console.log('⚠️ Peer already exists:', username)
         }
         break
       }
@@ -208,17 +370,53 @@ export const useWebRTC = ({
       }
 
       case 'offer': {
-        console.log('Received offer from:', data.from)
+        console.log('📨 Received offer from:', data.from)
         const peer = peersRef.current.get(data.from)
         if (!peer) {
-          console.log('Peer not found for offer:', data.from)
+          console.error('❌ Peer not found for offer:', data.from)
           return
         }
 
         try {
-          await peer.connection.setRemoteDescription(new RTCSessionDescription(data.payload.sdp))
+          const offerCollision =
+            peer.connection.signalingState !== 'stable'
+
+          console.log(`🤝 Offer collision check: ${offerCollision}, isPolite: ${peer.isPolite}, signalingState: ${peer.connection.signalingState}`)
+
+          // If we're impolite and there's a collision, ignore the offer
+          peer.ignoreOffer = !peer.isPolite && offerCollision
+
+          if (peer.ignoreOffer) {
+            console.log('⚠️ IMPOLITE peer ignoring offer due to collision from:', peer.username)
+            return
+          }
+
+          // If we're polite and there's a collision, rollback our offer
+          if (peer.isPolite && offerCollision) {
+            console.log('🔄 POLITE peer rolling back local offer')
+            await Promise.all([
+              peer.connection.setLocalDescription({ type: 'rollback' }),
+              peer.connection.setRemoteDescription(new RTCSessionDescription(data.payload.sdp))
+            ])
+          } else {
+            console.log('🔄 Setting remote description for:', peer.username)
+            await peer.connection.setRemoteDescription(new RTCSessionDescription(data.payload.sdp))
+          }
+
+          console.log(`📋 Received SDP type: ${data.payload.sdp.type}`)
+          console.log(`📋 Received SDP has ${data.payload.sdp.sdp?.split('m=').length - 1} media sections`)
+
+          // Log what receivers we now have
+          const receivers = peer.connection.getReceivers()
+          console.log(`📥 Receivers after setting remote description:`, receivers.map(r => ({
+            kind: r.track?.kind,
+            id: r.track?.id,
+            enabled: r.track?.enabled
+          })))
+
           const answer = await peer.connection.createAnswer()
           await peer.connection.setLocalDescription(answer)
+          console.log('✅ Answer created for:', peer.username)
 
           if (wsRef.current?.readyState === WebSocket.OPEN) {
             const message: SignalMessage = {
@@ -229,27 +427,30 @@ export const useWebRTC = ({
               payload: { sdp: answer },
             }
             wsRef.current.send(JSON.stringify(message))
-            console.log('Answer sent to:', data.from)
+            console.log('📤 Answer sent to:', peer.username)
+          } else {
+            console.error('❌ WebSocket not open, cannot send answer')
           }
         } catch (error) {
-          console.error('Error handling offer:', error)
+          console.error('❌ Error handling offer from', peer.username, ':', error)
         }
         break
       }
 
       case 'answer': {
-        console.log('Received answer from:', data.from)
+        console.log('📨 Received answer from:', data.from)
         const peer = peersRef.current.get(data.from)
         if (!peer) {
-          console.log('Peer not found for answer:', data.from)
+          console.error('❌ Peer not found for answer:', data.from)
           return
         }
 
         try {
+          console.log('🔄 Setting remote description (answer) for:', peer.username)
           await peer.connection.setRemoteDescription(new RTCSessionDescription(data.payload.sdp))
-          console.log('Answer processed from:', data.from)
+          console.log('✅ Answer processed from:', peer.username)
         } catch (error) {
-          console.error('Error handling answer:', error)
+          console.error('❌ Error handling answer from', peer.username, ':', error)
         }
         break
       }
@@ -257,15 +458,15 @@ export const useWebRTC = ({
       case 'ice-candidate': {
         const peer = peersRef.current.get(data.from)
         if (!peer) {
-          console.log('Peer not found for ICE candidate:', data.from)
+          console.error('❌ Peer not found for ICE candidate:', data.from)
           return
         }
 
         try {
           await peer.connection.addIceCandidate(new RTCIceCandidate(data.payload.candidate))
-          console.log('ICE candidate added from:', data.from)
+          console.log('✅ ICE candidate added from:', peer.username)
         } catch (error) {
-          console.error('Error adding ICE candidate:', error)
+          console.error('❌ Error adding ICE candidate from', peer.username, ':', error)
         }
         break
       }
@@ -276,30 +477,38 @@ export const useWebRTC = ({
   const toggleAudio = useCallback(async () => {
     try {
       if (!audioEnabled) {
-        console.log('Enabling audio...')
+        console.log('🎤 Enabling audio...')
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-
         const audioTrack = stream.getAudioTracks()[0]
+
+        console.log('🎤 Audio track details:', {
+          id: audioTrack.id,
+          kind: audioTrack.kind,
+          label: audioTrack.label,
+          enabled: audioTrack.enabled,
+          muted: audioTrack.muted,
+          readyState: audioTrack.readyState
+        })
 
         if (!localStreamRef.current) {
           localStreamRef.current = new MediaStream()
         }
 
-        localStreamRef.current.addTrack(audioTrack)
-        setLocalStream(new MediaStream(localStreamRef.current.getTracks()))
-
-        // Add track to all peer connections
-        peersRef.current.forEach(peer => {
-          const sender = peer.connection.getSenders().find(s => s.track?.kind === 'audio')
-          if (sender) {
-            sender.replaceTrack(audioTrack)
-          } else {
-            peer.connection.addTrack(audioTrack, localStreamRef.current!)
-          }
+        // Remove old audio tracks
+        localStreamRef.current.getAudioTracks().forEach(track => {
+          track.stop()
+          localStreamRef.current!.removeTrack(track)
         })
 
+        localStreamRef.current.addTrack(audioTrack)
+        console.log('✅ Audio track added to local stream')
+        setLocalStream(new MediaStream(localStreamRef.current.getTracks()))
+
+        // Replace track for all peers
+        await replaceTrackForAllPeers(audioTrack, 'audio')
+
         setAudioEnabled(true)
-        console.log('Audio enabled')
+        console.log('✅ Audio enabled')
 
         if (wsRef.current?.readyState === WebSocket.OPEN) {
           wsRef.current.send(JSON.stringify({
@@ -308,10 +517,20 @@ export const useWebRTC = ({
           }))
         }
       } else {
-        console.log('Disabling audio...')
+        console.log('🔇 Disabling audio...')
         localStreamRef.current?.getAudioTracks().forEach(track => {
           track.stop()
           localStreamRef.current!.removeTrack(track)
+        })
+
+        // Remove audio senders from all peer connections
+        peersRef.current.forEach(peer => {
+          const senders = peer.connection.getSenders()
+          senders.forEach(sender => {
+            if (sender.track?.kind === 'audio') {
+              peer.connection.removeTrack(sender)
+            }
+          })
         })
 
         setLocalStream(localStreamRef.current ? new MediaStream(localStreamRef.current.getTracks()) : null)
@@ -325,38 +544,38 @@ export const useWebRTC = ({
         }
       }
     } catch (error) {
-      console.error('Error toggling audio:', error)
+      console.error('❌ Error toggling audio:', error)
       toast.error('Failed to access microphone')
     }
-  }, [audioEnabled])
+  }, [audioEnabled, replaceTrackForAllPeers])
 
   // Toggle video
   const toggleVideo = useCallback(async () => {
     try {
       if (!videoEnabled) {
-        console.log('Enabling video...')
+        console.log('📹 Enabling video...')
         const stream = await navigator.mediaDevices.getUserMedia({ video: true })
-
         const videoTrack = stream.getVideoTracks()[0]
 
         if (!localStreamRef.current) {
           localStreamRef.current = new MediaStream()
         }
 
-        localStreamRef.current.addTrack(videoTrack)
-        setLocalStream(new MediaStream(localStreamRef.current.getTracks()))
-
-        peersRef.current.forEach(peer => {
-          const sender = peer.connection.getSenders().find(s => s.track?.kind === 'video')
-          if (sender) {
-            sender.replaceTrack(videoTrack)
-          } else {
-            peer.connection.addTrack(videoTrack, localStreamRef.current!)
-          }
+        // Remove old video tracks
+        localStreamRef.current.getVideoTracks().forEach(track => {
+          track.stop()
+          localStreamRef.current!.removeTrack(track)
         })
 
+        localStreamRef.current.addTrack(videoTrack)
+        originalVideoTrackRef.current = videoTrack
+        setLocalStream(new MediaStream(localStreamRef.current.getTracks()))
+
+        // Replace track for all peers
+        await replaceTrackForAllPeers(videoTrack, 'video')
+
         setVideoEnabled(true)
-        console.log('Video enabled')
+        console.log('✅ Video enabled')
 
         if (wsRef.current?.readyState === WebSocket.OPEN) {
           wsRef.current.send(JSON.stringify({
@@ -365,12 +584,23 @@ export const useWebRTC = ({
           }))
         }
       } else {
-        console.log('Disabling video...')
+        console.log('📹 Disabling video...')
         localStreamRef.current?.getVideoTracks().forEach(track => {
           track.stop()
           localStreamRef.current!.removeTrack(track)
         })
 
+        // Remove video senders from all peer connections
+        peersRef.current.forEach(peer => {
+          const senders = peer.connection.getSenders()
+          senders.forEach(sender => {
+            if (sender.track?.kind === 'video') {
+              peer.connection.removeTrack(sender)
+            }
+          })
+        })
+
+        originalVideoTrackRef.current = null
         setLocalStream(localStreamRef.current ? new MediaStream(localStreamRef.current.getTracks()) : null)
         setVideoEnabled(false)
 
@@ -382,16 +612,16 @@ export const useWebRTC = ({
         }
       }
     } catch (error) {
-      console.error('Error toggling video:', error)
+      console.error('❌ Error toggling video:', error)
       toast.error('Failed to access camera')
     }
-  }, [videoEnabled])
+  }, [videoEnabled, replaceTrackForAllPeers])
 
   // Toggle screen sharing
   const toggleScreenShare = useCallback(async () => {
     try {
       if (!screenSharing) {
-        console.log('Starting screen share...')
+        console.log('🖥️ Starting screen share...')
         const stream = await navigator.mediaDevices.getDisplayMedia({
           video: true,
           audio: true
@@ -400,14 +630,29 @@ export const useWebRTC = ({
         screenStreamRef.current = stream
         const screenTrack = stream.getVideoTracks()[0]
 
-        peersRef.current.forEach(peer => {
-          const sender = peer.connection.getSenders().find(s => s.track?.kind === 'video')
-          if (sender) {
-            sender.replaceTrack(screenTrack)
-          } else {
-            peer.connection.addTrack(screenTrack, stream)
+        // Save original video track if it exists
+        if (videoEnabled && localStreamRef.current) {
+          const videoTrack = localStreamRef.current.getVideoTracks()[0]
+          if (videoTrack) {
+            originalVideoTrackRef.current = videoTrack
           }
-        })
+        }
+
+        // Remove current video track from local stream
+        if (localStreamRef.current) {
+          localStreamRef.current.getVideoTracks().forEach(track => {
+            localStreamRef.current!.removeTrack(track)
+          })
+        } else {
+          localStreamRef.current = new MediaStream()
+        }
+
+        // Add screen track to local stream
+        localStreamRef.current.addTrack(screenTrack)
+        setLocalStream(new MediaStream(localStreamRef.current.getTracks()))
+
+        // Replace video track for all peers with screen track
+        await replaceTrackForAllPeers(screenTrack, 'video')
 
         screenTrack.onended = () => {
           console.log('Screen share ended by user')
@@ -415,6 +660,7 @@ export const useWebRTC = ({
         }
 
         setScreenSharing(true)
+        console.log('✅ Screen sharing started')
 
         if (wsRef.current?.readyState === WebSocket.OPEN) {
           wsRef.current.send(JSON.stringify({
@@ -423,23 +669,27 @@ export const useWebRTC = ({
           }))
         }
       } else {
-        console.log('Stopping screen share...')
+        console.log('🖥️ Stopping screen share...')
         screenStreamRef.current?.getTracks().forEach(track => track.stop())
         screenStreamRef.current = null
 
-        if (videoEnabled && localStreamRef.current) {
-          const videoTrack = localStreamRef.current.getVideoTracks()[0]
-          if (videoTrack) {
-            peersRef.current.forEach(peer => {
-              const sender = peer.connection.getSenders().find(s => s.track?.kind === 'video')
-              if (sender) {
-                sender.replaceTrack(videoTrack)
-              }
-            })
-          }
+        // Remove screen track from local stream
+        if (localStreamRef.current) {
+          localStreamRef.current.getVideoTracks().forEach(track => {
+            track.stop()
+            localStreamRef.current!.removeTrack(track)
+          })
         }
 
+        // Restore original video track if it was active
+        if (videoEnabled && originalVideoTrackRef.current) {
+          localStreamRef.current!.addTrack(originalVideoTrackRef.current)
+          await replaceTrackForAllPeers(originalVideoTrackRef.current, 'video')
+        }
+
+        setLocalStream(localStreamRef.current ? new MediaStream(localStreamRef.current.getTracks()) : null)
         setScreenSharing(false)
+        console.log('✅ Screen sharing stopped')
 
         if (wsRef.current?.readyState === WebSocket.OPEN) {
           wsRef.current.send(JSON.stringify({
@@ -449,20 +699,18 @@ export const useWebRTC = ({
         }
       }
     } catch (error) {
-      console.error('Error toggling screen share:', error)
+      console.error('❌ Error toggling screen share:', error)
       toast.error('Failed to share screen')
     }
-  }, [screenSharing, videoEnabled])
+  }, [screenSharing, videoEnabled, replaceTrackForAllPeers])
 
   // Main effect - connect and cleanup
   useEffect(() => {
-    // Don't connect if not enabled
     if (!enabled || !channelId) {
       console.log('WebRTC not enabled or no channelId')
       return
     }
 
-    // Check if already connected
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       console.log('Already connected, skipping')
       return
@@ -481,6 +729,7 @@ export const useWebRTC = ({
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data) as SignalMessage
+          console.log('📨 RAW WebSocket message received:', data.type, 'from:', data.from, 'to:', data.to)
           handleSignal(data)
         } catch (error) {
           console.error('Failed to parse signaling message:', error)
@@ -503,11 +752,9 @@ export const useWebRTC = ({
       toast.error('Failed to connect to voice/video server')
     }
 
-    // Cleanup function
     return () => {
       console.log('🧹 Cleaning up WebRTC connection...')
 
-      // Close all peer connections
       peersRef.current.forEach(peer => {
         console.log('Closing peer connection:', peer.username)
         peer.connection.close()
@@ -515,7 +762,6 @@ export const useWebRTC = ({
       peersRef.current.clear()
       setPeers([])
 
-      // Stop all media tracks
       localStreamRef.current?.getTracks().forEach(track => {
         console.log('Stopping track:', track.kind)
         track.stop()
@@ -524,9 +770,9 @@ export const useWebRTC = ({
 
       localStreamRef.current = null
       screenStreamRef.current = null
+      originalVideoTrackRef.current = null
       setLocalStream(null)
 
-      // Close WebSocket
       if (wsRef.current) {
         console.log('Closing WebSocket connection')
         if (wsRef.current.readyState === WebSocket.OPEN) {
@@ -540,8 +786,7 @@ export const useWebRTC = ({
       setVideoEnabled(false)
       setScreenSharing(false)
     }
-  }, [enabled, channelId]) // Only depend on enabled and channelId
-  // handleSignal is NOT in deps to prevent reconnection loop
+  }, [enabled, channelId])
 
   return {
     isConnected,

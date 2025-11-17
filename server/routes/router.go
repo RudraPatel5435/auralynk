@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/RudraPatel5435/vyenet/server/database"
+	"github.com/RudraPatel5435/vyenet/server/handlers"
 	"github.com/RudraPatel5435/vyenet/server/middleware"
 	"github.com/RudraPatel5435/vyenet/server/models"
 	"github.com/gin-contrib/sessions"
@@ -36,16 +37,20 @@ func SetupRouter() *gin.Engine {
 		RegisterChannelRoutes(protected)
 		RegisterMemberRoutes(protected)
 		RegisterMessageRoutes(protected)
+
+		// Register WebRTC HTTP endpoints
+		protected.GET("/channels/:id/media-sessions", handlers.GetActiveMediaSessions)
 	}
 
 	ws := r.Group("/ws")
 	ws.Use(middleware.SessionAuth())
 	{
-		RegisterWebSocketRoutes(ws)
-	}
+		// Chat WebSocket
+		ws.GET("/:channelId", handlers.ChatWebSocket)
 
-	// Register WebRTC routes
-	RegisterWebRTCRoutes(protected, ws)
+		// WebRTC Signaling WebSocket
+		ws.GET("/rtc/:channelId", handlers.RTCSignalingWebSocket)
+	}
 
 	// Remove in production
 	if gin.Mode() == gin.DebugMode {
