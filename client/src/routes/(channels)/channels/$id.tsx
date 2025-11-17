@@ -3,7 +3,6 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Hash, Users, X } from 'lucide-react'
 import { Skeleton } from "@/components/ui/skeleton"
 import { ChatInterface } from '@/components/chat/ChatInterface'
-import { VoiceVideoPanel } from '@/components/chat/VoiceVideoPanel'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
 
@@ -58,9 +57,6 @@ function RouteComponent() {
           </div>
         ) : channel ? (
           <div className='flex-1 flex'>
-            {channel && (
-              <VoiceVideoPanel channelId={channel.id} channelName={channel.name} />
-            )}
             <ChatInterface channelId={channel.id} channelName={channel.name} />
           </div>
         ) : (

@@ -28,7 +28,6 @@ func main() {
 	// database.DB.AutoMigrate(&models.User{}, &models.Message{}, &models.Channel{}, &models.MediaSession{})
 
 	handlers.StartHub()
-	handlers.StartRTCHub()
 
 	r := routes.SetupRouter()
 

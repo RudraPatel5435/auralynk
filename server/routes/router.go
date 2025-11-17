@@ -38,8 +38,6 @@ func SetupRouter() *gin.Engine {
 		RegisterMemberRoutes(protected)
 		RegisterMessageRoutes(protected)
 
-		// Register WebRTC HTTP endpoints
-		protected.GET("/channels/:id/media-sessions", handlers.GetActiveMediaSessions)
 	}
 
 	ws := r.Group("/ws")
@@ -47,9 +45,6 @@ func SetupRouter() *gin.Engine {
 	{
 		// Chat WebSocket
 		ws.GET("/:channelId", handlers.ChatWebSocket)
-
-		// WebRTC Signaling WebSocket
-		ws.GET("/rtc/:channelId", handlers.RTCSignalingWebSocket)
 	}
 
 	// Remove in production
