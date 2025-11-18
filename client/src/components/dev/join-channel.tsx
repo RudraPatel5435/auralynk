@@ -8,7 +8,7 @@ import {
   DialogTrigger
 } from "../ui/dialog"
 import { DropdownMenuItem } from "../ui/dropdown-menu"
-import { useState } from "react"
+import { useId, useState } from "react"
 import { useChannels } from "@/hooks/useChannels"
 import { Button } from "../ui/button"
 import { Card, CardContent, CardHeader } from "../ui/card"
@@ -61,9 +61,9 @@ const JoinChannel = () => {
 
             {/* 🔄 LOADING SKELETON STATE */}
             {channelsLoading &&
-              Array.from({ length: 6 }).map((_, i) => (
+              Array.from({ length: 6 }).map((_) => (
                 <Card
-                  key={i}
+                  key={useId()}
                   className="rounded-xl border p-4 animate-pulse bg-accent/30"
                 >
                   <div className="h-5 w-1/2 bg-muted rounded mb-3" />
@@ -94,7 +94,7 @@ const JoinChannel = () => {
                 <Card
                   key={ch.id}
                   onClick={() => {
-                    if (ch.id != joinChannelId || ch.name != joinChannelName) {
+                    if (ch.id !== joinChannelId || ch.name !== joinChannelName) {
                       setJoinChannelName(ch.name)
                       setJoinChannelId(ch.id)
                     } else {

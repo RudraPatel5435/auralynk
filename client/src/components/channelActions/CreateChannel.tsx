@@ -14,7 +14,7 @@ import { Button } from "../ui/button"
 import { Loader2, Plus } from "lucide-react"
 import { Label } from "../ui/label"
 import { Input } from "../ui/input"
-import { useState } from "react"
+import { useId, useState } from "react"
 import { useChannels } from "@/hooks/useChannels"
 
 const CreateChannel = () => {
@@ -47,9 +47,9 @@ const CreateChannel = () => {
           <div className="grid gap-4">
             {/* Channel Name */}
             <div className="grid gap-2">
-              <Label htmlFor="channel-name" className="text-primary">Channel Name</Label>
+              <Label htmlFor={useId()} className="text-primary">Channel Name</Label>
               <Input
-                id="channel-name"
+                id={useId()}
                 placeholder="e.g. general"
                 value={channelName}
                 onChange={(e) => setChannelName(e.target.value)}
@@ -67,11 +67,11 @@ const CreateChannel = () => {
                 className="flex items-center gap-6"
               >
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="public" id="public" />
+                  <RadioGroupItem value="public" id={useId()} />
                   <Label htmlFor="public">Public</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="private" id="private" />
+                  <RadioGroupItem value="private" id={useId()} />
                   <Label htmlFor="private">Private</Label>
                 </div>
               </RadioGroup>
