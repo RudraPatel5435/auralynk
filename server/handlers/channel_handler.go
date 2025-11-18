@@ -105,16 +105,18 @@ func GetChannels(c *gin.Context) {
 		}
 
 		response = append(response, gin.H{
-			"id":             channel.ID,
-			"name":           channel.Name,
-			"access_type":    channel.AccessType,
-			"admin_username": channel.Admin.Username,
-			"admin_id":       channel.AdminID,
-			"is_member":      isMember,
-			"is_admin":       channel.AdminID == user.ID,
-			"member_count":   len(channel.Members),
-			"members":        members,
-			"created_at":     channel.CreatedAt,
+			"id":          channel.ID,
+			"name":        channel.Name,
+			"access_type": channel.AccessType,
+			"admin": gin.H{
+				"id":       channel.AdminID,
+				"username": channel.Admin.Username,
+			},
+			"is_member":    isMember,
+			"is_admin":     channel.AdminID == user.ID,
+			"member_count": len(channel.Members),
+			"members":      members,
+			"created_at":   channel.CreatedAt,
 		})
 	}
 

@@ -1,10 +1,18 @@
 import { useChannels } from '@/hooks/useChannels'
-import { createFileRoute } from '@tanstack/react-router'
-import { Hash, Users, X } from 'lucide-react'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { Hash, Settings, Users, X } from 'lucide-react'
 import { Skeleton } from "@/components/ui/skeleton"
 import { ChatInterface } from '@/components/chat/ChatInterface'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 
 export const Route = createFileRoute('/(channels)/channels/$id')({
   component: RouteComponent,
@@ -12,9 +20,10 @@ export const Route = createFileRoute('/(channels)/channels/$id')({
 
 function RouteComponent() {
   const { id } = Route.useParams()
-  const { channel, channelLoading } = useChannels(id)
-  const [showMembers, setShowMembers] = useState(false)
+  const { channel, channelLoading, leaveChannel } = useChannels(id)
+  const navigate = useNavigate()
 
+  const [showMembers, setShowMembers] = useState(false)
   const members = channel?.members ?? []
 
   return (
@@ -32,17 +41,35 @@ function RouteComponent() {
               <div className='flex items-center'>
                 <Hash className="h-5 w-5 text-muted-foreground mr-2" />
                 <span className="font-semibold">{channel.name}</span>
+                <Button
+                  variant='outline'
+                  onClick={() => setShowMembers(!showMembers)}
+                  className="gap-2 cursor-pointer ml-4"
+                >
+                  <Users className="h-4 w-4" />
+                  {channel.member_count}{" "}
+                  {channel.member_count === 1 ? "member" : "members"}
+                </Button>
               </div>
 
-              <Button
-                variant='outline'
-                onClick={() => setShowMembers(!showMembers)}
-                className="gap-2 cursor-pointer"
-              >
-                <Users className="h-4 w-4" />
-                {channel.member_count}{" "}
-                {channel.member_count === 1 ? "member" : "members"}
-              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" className='ml-4'><Settings /></Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Settings</DialogTitle>
+                  </DialogHeader>
+                  <DialogClose asChild>
+                    <Button variant='destructive' onClick={() => {
+                      leaveChannel(channel.id)
+                      navigate({ to: "/channels/@dev" })
+                    }}>
+                      Leave {channel.name}
+                    </Button>
+                  </DialogClose>
+                </DialogContent>
+              </Dialog>
             </div>
           ) : (
             <p className="text-muted-foreground">Channel not found</p>

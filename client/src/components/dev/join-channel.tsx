@@ -13,6 +13,7 @@ import { useChannels } from "@/hooks/useChannels"
 import { Button } from "../ui/button"
 import { Card, CardContent, CardHeader } from "../ui/card"
 import { cn } from "@/lib/utils"
+import { DialogClose } from "@radix-ui/react-dialog"
 
 const JoinChannel = () => {
   const {
@@ -93,12 +94,17 @@ const JoinChannel = () => {
                 <Card
                   key={ch.id}
                   onClick={() => {
-                    setJoinChannelName(ch.name)
-                    setJoinChannelId(ch.id)
+                    if (ch.id != joinChannelId || ch.name != joinChannelName) {
+                      setJoinChannelName(ch.name)
+                      setJoinChannelId(ch.id)
+                    } else {
+                      setJoinChannelName("")
+                      setJoinChannelId("")
+                    }
                   }}
                   className={cn(
                     "cursor-pointer rounded-xl border transition-all duration-150 shadow-sm hover:shadow-md hover:bg-accent/40",
-                    joinChannelId === ch.id && "ring-2 ring-primary bg-primary/5 shadow-md"
+                    joinChannelId === ch.id && "bg-primary/30 shadow-md"
                   )}
                 >
                   <CardHeader className="pb-1 text-lg font-semibold">
@@ -132,17 +138,19 @@ const JoinChannel = () => {
           </div>
 
           {/* FOOTER BUTTON */}
-          <Button
-            onClick={handleJoinChannel}
-            disabled={!joinChannelId || channelActionsLoading}
-            className="w-full h-11 text-md rounded-xl"
-          >
-            {channelActionsLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              `Join #${joinChannelName || "DevSpace"}`
-            )}
-          </Button>
+          <DialogClose>
+            <Button
+              onClick={handleJoinChannel}
+              disabled={!joinChannelId || channelActionsLoading}
+              className="w-full h-11 text-md rounded-xl"
+            >
+              {channelActionsLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                `Join #${joinChannelName || "DevSpace"}`
+              )}
+            </Button>
+          </DialogClose>
 
         </div>
       </DialogContent>
