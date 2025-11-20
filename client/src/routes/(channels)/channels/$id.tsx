@@ -1,10 +1,10 @@
 import { useChannels } from '@/hooks/useChannels'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { Hash, Settings, Users, X } from 'lucide-react'
+import { Hash, Loader2, Settings, Users, X } from 'lucide-react'
 import { Skeleton } from "@/components/ui/skeleton"
 import { ChatInterface } from '@/components/chat/ChatInterface'
 import { Button } from '@/components/ui/button'
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import {
   Dialog,
   DialogClose,
@@ -12,7 +12,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription
 } from "@/components/ui/dialog"
+import { Label } from '@/components/ui/label'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { toast } from 'sonner'
 
 export const Route = createFileRoute('/(channels)/channels/$id')({
   component: RouteComponent,
@@ -20,11 +24,24 @@ export const Route = createFileRoute('/(channels)/channels/$id')({
 
 function RouteComponent() {
   const { id } = Route.useParams()
-  const { channel, channelLoading, leaveChannel } = useChannels(id)
+  const { channel, channelLoading, leaveChannel, changeType, changeTypeLoading } = useChannels(id)
   const navigate = useNavigate()
+  const priId = useId()
+  const pubId = useId()
 
+  const [dialogOpen, setDialogOpen] = useState(false)
   const [showMembers, setShowMembers] = useState(false)
+  const [accessType, setAccessType] = useState<string>(channel?.access_type ?? 'public')
   const members = channel?.members ?? []
+
+  const handleAccessType = () => {
+    if (accessType == channel?.access_type) {
+      toast.info("Acces type remains same")
+      return
+    }
+    changeType(id, accessType)
+    setDialogOpen(false)
+  }
 
   return (
     <div className="flex-1 flex h-full">
@@ -52,7 +69,7 @@ function RouteComponent() {
                 </Button>
               </div>
 
-              <Dialog>
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="ghost" className='ml-4'><Settings /></Button>
                 </DialogTrigger>
@@ -60,14 +77,36 @@ function RouteComponent() {
                   <DialogHeader>
                     <DialogTitle>Settings</DialogTitle>
                   </DialogHeader>
-                  <DialogClose asChild>
-                    <Button variant='destructive' onClick={() => {
-                      leaveChannel(channel.id)
-                      navigate({ to: "/channels/@dev" })
-                    }}>
-                      Leave {channel.name}
-                    </Button>
-                  </DialogClose>
+                  <DialogDescription>
+                    Change the settings of your DevSpace
+                  </DialogDescription>
+                  <div className="grid gap-2 space-y-2 border border-border p-2 rounded-lg">
+                    <p className="text-primary">Access Type</p>
+                    <RadioGroup
+                      defaultValue={pubId}
+                      value={accessType}
+                      onValueChange={setAccessType}
+                      className="flex items-center gap-6"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="public" id={pubId} />
+                        <Label htmlFor={pubId}>Public</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="private" id={priId} />
+                        <Label htmlFor={priId}>Private</Label>
+                      </div>
+                    </RadioGroup>
+
+                    <Button onClick={handleAccessType} disabled={changeTypeLoading}>{changeTypeLoading ? <Loader2 className='animate-spin' /> : "Change Access Type"}</Button>
+                  </div>
+                  <Button variant='destructive' onClick={() => {
+                    leaveChannel(channel.id)
+                    navigate({ to: "/channels/@dev" })
+                    setDialogOpen(false)
+                  }}>
+                    Leave {channel.name}
+                  </Button>
                 </DialogContent>
               </Dialog>
             </div>

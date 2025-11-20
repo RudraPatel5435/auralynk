@@ -1,3 +1,4 @@
+import { channelApi } from "@/lib/api"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
@@ -110,6 +111,21 @@ export const useChannels = (channelId?: string) => {
     onError: (err: any) => toast.error(err.message),
   })
 
+  const changeTypeMutation = useMutation({
+    mutationFn: async (payload: { id: string; access_type: string }) =>
+      channelApi.changeChannelType(payload.id, payload.access_type),
+
+    onSuccess: (data) => {
+      toast.success(data.message);
+      queryClient.invalidateQueries({ queryKey: ["channel", channelId] });
+      queryClient.invalidateQueries({ queryKey: ["channels"] });
+    },
+
+    onError: () => {
+      toast.error("Failed to change channel access type");
+    },
+  });
+
   return {
     channels,
     channel,
@@ -125,5 +141,8 @@ export const useChannels = (channelId?: string) => {
     joinChannel: joinMutation.mutateAsync,
     leaveChannel: leaveMutation.mutateAsync,
     createChannel: createMutation.mutateAsync,
+    changeType: (id: string, access_type: string) =>
+      changeTypeMutation.mutate({ id, access_type }),
+    changeTypeLoading: changeTypeMutation.isPending,
   }
 }

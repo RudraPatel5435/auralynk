@@ -380,3 +380,45 @@ func LeaveChannel(c *gin.Context) {
 		"channel_id": channel.ID,
 	})
 }
+
+func ChangeAccessType(c *gin.Context) {
+	channelID := c.Param("id")
+	access_type := c.Param("type")
+
+	if !utils.IsValidUUID(channelID) {
+		utils.ErrorResponse(c, 400, "Invalid channel ID")
+		return
+	}
+
+	if access_type != "public" && access_type != "private" {
+		utils.ErrorResponse(c, 400, "Invalid access type")
+		return
+	}
+
+	user := middleware.GetCurrentUser(c)
+	if user == nil {
+		utils.ErrorResponse(c, 401, "User not authenticated")
+		return
+	}
+
+	var channel models.Channel
+	if err := database.DB.Preload("Members").First(&channel, "id = ?", channelID).Error; err != nil {
+		utils.ErrorResponse(c, 404, "Channel not found")
+		return
+	}
+
+	if channel.AdminID != user.ID {
+		utils.ErrorResponse(c, 403, "Channel settings can't be changed by members")
+		return
+	}
+
+	if err := database.DB.Model(&channel).Update("access_type", access_type).Error; err != nil {
+		utils.ErrorResponse(c, 500, "Failed to update channel access type")
+		return
+	}
+
+	utils.SuccessResponse(c, 200, "Successfully changed channel access type", gin.H{
+		"channel_id":  channel.ID,
+		"access_type": channel.AccessType,
+	})
+}

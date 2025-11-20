@@ -45,6 +45,10 @@ export const channelApi = {
     const { data } = await api.post(`/channels/${id}/leave`);
     return data;
   },
+  changeChannelType: async (id: string, access_type: string) => {
+    const { data } = await api.put(`channels/${id}/access/${access_type}`)
+    return data;
+  }
 };
 
 export const userApi = {

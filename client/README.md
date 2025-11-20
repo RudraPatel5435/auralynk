@@ -2,13 +2,12 @@
 
 ## TODO
 
-[] leave channel
-[] Auralynk (name, channels) -> Vyenet (name, devspace)
+[] refactor useChannel to use api.ts instead of calling the apis again
 [] user presenece (Last online)
 [] ability to change name of devspace
-[] ability to change acces_type of devspace
-[] Exalidraw Integration
-[] webrtc integration
+[-] ability to change acces_type of devspace
+[-] leave channel
+[-] Auralynk (name, channels) -> Vyenet (name, devspace)
 [-] sub spcace in spaces for chatting, voice chat and video chat
 [-] view members in the space
 [-] use tanstack queries for messages
@@ -18,6 +17,8 @@
 [-] chat/ws integration
 [-] clicking on devspace should change url 
 [-] join space func
+<!-- [] Exalidraw Integration -->
+<!-- [] webrtc integration -->
 
 Pages
 [] landing Page
