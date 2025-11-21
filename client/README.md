@@ -2,8 +2,9 @@
 
 ## TODO
 
-[] refactor useChannel to use api.ts instead of calling the apis again
 [] user presenece (Last online)
+[] delete devSpace
+[-] refactor useChannel to use api.ts instead of calling the apis again
 [-] ability to change name of devspace
 [-] ability to change acces_type of devspace
 [-] leave channel

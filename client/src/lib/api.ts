@@ -10,6 +10,14 @@ export const api = axios.create({
   withCredentials: true,
 })
 
+api.interceptors.response.use(
+  response => response,
+  error => {
+    const message = error.response?.data?.messages || error.message || "Something went wrong"
+    return Promise.reject(new Error(message))
+  }
+)
+
 export const channelApi = {
   getChannels: async () => {
     const { data } = await api.get('/channels');
@@ -21,13 +29,8 @@ export const channelApi = {
     return data.data || data;
   },
 
-  createChannel: async (input: { name: string; access_type: 'public' | 'private' }) => {
-    const { data } = await api.post('/channels', input);
-    return data;
-  },
-
-  updateChannel: async (id: string, input: { name?: string; access_type?: 'public' | 'private' }) => {
-    const { data } = await api.patch(`/channels/${id}`, input);
+  createChannel: async (payload: { name: string; access_type: string }) => {
+    const { data } = await api.post('/channels/create', payload);
     return data;
   },
 
@@ -46,7 +49,7 @@ export const channelApi = {
     return data;
   },
   changeChannelType: async (id: string, access_type: string) => {
-    const { data } = await api.put(`channels/${id}/access/${access_type}`)
+    const { data } = await api.patch(`channels/${id}/access/${access_type}`)
     return data;
   },
   changeChannelName: async (id: string, name: string) => {
