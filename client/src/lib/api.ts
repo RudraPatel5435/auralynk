@@ -48,7 +48,11 @@ export const channelApi = {
   changeChannelType: async (id: string, access_type: string) => {
     const { data } = await api.put(`channels/${id}/access/${access_type}`)
     return data;
-  }
+  },
+  changeChannelName: async (id: string, name: string) => {
+    const { data } = await api.patch(`channels/${id}/change-name/${name}`)
+    return data
+  },
 };
 
 export const userApi = {

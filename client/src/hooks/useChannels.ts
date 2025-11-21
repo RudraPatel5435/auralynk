@@ -121,10 +121,25 @@ export const useChannels = (channelId?: string) => {
       queryClient.invalidateQueries({ queryKey: ["channels"] });
     },
 
-    onError: () => {
-      toast.error("Failed to change channel access type");
+    onError: (err: any) => {
+      toast.error(err.message);
     },
   });
+
+  const changeNameMutation = useMutation({
+    mutationFn: async (payload: { id: string, name: string }) =>
+      channelApi.changeChannelName(payload.id, payload.name),
+
+    onSuccess: (data) => {
+      toast.success(data.message);
+      queryClient.invalidateQueries({ queryKey: ["channel", channelId] });
+      queryClient.invalidateQueries({ queryKey: ["channels"] });
+    },
+
+    onError: (err: any) => {
+      toast.error(err.message);
+    },
+  })
 
   return {
     channels,
@@ -137,12 +152,13 @@ export const useChannels = (channelId?: string) => {
       joinMutation.isPending ||
       leaveMutation.isPending ||
       createMutation.isPending,
+    changeTypeLoading: changeTypeMutation.isPending,
+    changeNameLoading: changeNameMutation.isPending,
 
     joinChannel: joinMutation.mutateAsync,
     leaveChannel: leaveMutation.mutateAsync,
     createChannel: createMutation.mutateAsync,
-    changeType: (id: string, access_type: string) =>
-      changeTypeMutation.mutate({ id, access_type }),
-    changeTypeLoading: changeTypeMutation.isPending,
+    changeType: (id: string, access_type: string) => changeTypeMutation.mutate({ id, access_type }),
+    changeName: (id: string, name: string) => changeNameMutation.mutate({ id, name }),
   }
 }

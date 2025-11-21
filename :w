@@ -51,7 +51,7 @@ function RouteComponent() {
       toast.info("DevSpace name remains same")
       return
     }
-    changeName(id, newChannelName)
+    changeName(id, newName)
     setDialogOpen(false)
   }
 
@@ -107,9 +107,9 @@ function RouteComponent() {
                         disabled={newName === channel.name}
                         className={cn(
                           "p-2 rounded-xl border border-border transition-colors",
-                          newName === channel.name
+                          newName !== channel.name
                             ? "text-background bg-muted-foreground cursor-not-allowed opacity-50"
-                            : "text-primary bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer opacity-100"
+                            : "text-primary bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
                         )}
                       >
                         <RotateCwIcon className="h-4 w-4" />

@@ -16,5 +16,6 @@ func RegisterChannelRoutes(rg *gin.RouterGroup) {
 		channels.POST("/:id/join", handlers.JoinChannel)
 		channels.POST("/:id/leave", handlers.LeaveChannel)
 		channels.PUT("/:id/access/:type", handlers.ChangeAccessType)
+		channels.PATCH("/:id/change-name/:name", handlers.ChangeChannelName)
 	}
 }

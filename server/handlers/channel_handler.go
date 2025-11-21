@@ -422,3 +422,40 @@ func ChangeAccessType(c *gin.Context) {
 		"access_type": channel.AccessType,
 	})
 }
+
+func ChangeChannelName(c *gin.Context) {
+	channelID := c.Param("id")
+	name := c.Param("name")
+
+	if !utils.IsValidUUID(channelID) {
+		utils.ErrorResponse(c, 400, "Invalid channel ID")
+		return
+	}
+
+	user := middleware.GetCurrentUser(c)
+	if user == nil {
+		utils.ErrorResponse(c, 401, "User not authenticated")
+		return
+	}
+
+	var channel models.Channel
+	if err := database.DB.Preload("Members").First(&channel, "id = ?", channelID).Error; err != nil {
+		utils.ErrorResponse(c, 404, "Channel not found")
+		return
+	}
+
+	if channel.AdminID != user.ID {
+		utils.ErrorResponse(c, 403, "Channel settings can't be changed by members")
+		return
+	}
+
+	if err := database.DB.Model(&channel).Update("name", name).Error; err != nil {
+		utils.ErrorResponse(c, 500, "Failed to update channel name")
+		return
+	}
+
+	utils.SuccessResponse(c, 200, "Successfully changed channel name", gin.H{
+		"channel_id":   channel.ID,
+		"channel_name": channel.Name,
+	})
+}

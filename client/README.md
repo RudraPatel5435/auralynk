@@ -4,7 +4,7 @@
 
 [] refactor useChannel to use api.ts instead of calling the apis again
 [] user presenece (Last online)
-[] ability to change name of devspace
+[-] ability to change name of devspace
 [-] ability to change acces_type of devspace
 [-] leave channel
 [-] Auralynk (name, channels) -> Vyenet (name, devspace)
